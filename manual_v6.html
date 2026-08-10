@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PieCreator V6 - Official Manual</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-color: #0b0c10;
+            --sidebar-bg: #11141d;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --accent-color: #00d2ff;
+            --accent-gradient: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
+            --text-primary: #e0e6ed;
+            --text-secondary: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --glass-blur: 15px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        /* Layout */
+        .wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        aside {
+            width: 280px;
+            background-color: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 2rem;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .nav-links {
+            list-style: none;
+        }
+
+        .nav-links li {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.8rem 1rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .nav-links a:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--accent-color);
+            transform: translateX(5px);
+        }
+
+        .nav-links i {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Main Content */
+        main {
+            flex: 1;
+            margin-left: 280px;
+            padding: 4rem;
+            max-width: 1200px;
+        }
+
+        .hero {
+            margin-bottom: 5rem;
+            animation: fadeIn 1s ease-out;
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: var(--accent-gradient);
+            padding: 0.3rem 0.8rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.1;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+        }
+
+        /* Sections */
+        section {
+            margin-bottom: 6rem;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+
+        .section-header h2 {
+            font-size: 2rem;
+        }
+
+        .section-header i {
+            color: var(--accent-color);
+        }
+
+        /* Feature Cards */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 2.5rem;
+            border-radius: 24px;
+            backdrop-filter: blur(var(--glass-blur));
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 4px;
+            background: var(--accent-gradient);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            background-color: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card i {
+            color: var(--accent-color);
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        .card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+        }
+
+        .card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Info Box */
+        .info-box {
+            background: rgba(58, 123, 213, 0.1);
+            border-left: 4px solid var(--accent-color);
+            padding: 2rem;
+            border-radius: 0 16px 16px 0;
+            margin: 2rem 0;
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .info-box i {
+            color: var(--accent-color);
+            flex-shrink: 0;
+        }
+
+        .info-box div h4 {
+            margin-bottom: 0.5rem;
+            color: var(--accent-color);
+        }
+
+        /* Steps */
+        .step-list {
+            list-style: none;
+            counter-reset: step-counter;
+        }
+
+        .step-item {
+            position: relative;
+            padding-left: 4rem;
+            margin-bottom: 3rem;
+            counter-increment: step-counter;
+        }
+
+        .step-item::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 50px;
+            height: 50px;
+            background: var(--accent-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: white;
+            font-family: 'Outfit';
+        }
+
+        .step-content h4 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 10rem;
+            padding-top: 4rem;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            aside {
+                display: none;
+            }
+            main {
+                margin-left: 0;
+                padding: 2rem;
+            }
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="wrapper">
+        <aside>
+            <div class="logo">
+                <i data-lucide="zap"></i>
+                <span>PieCreator V6</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#intro"><i data-lucide="home"></i> はじめに</a></li>
+                <li><a href="#features"><i data-lucide="star"></i> 新機能</a></li>
+                <li><a href="#types"><i data-lucide="layers"></i> UIタイプ</a></li>
+                <li><a href="#guide"><i data-lucide="book-open"></i> 操作ガイド</a></li>
+                <li><a href="#data"><i data-lucide="database"></i> データ管理</a></li>
+            </ul>
+        </aside>
+
+        <main>
+            <div id="intro" class="hero">
+                <span class="version-badge">Version 6.0 Official</span>
+                <h1>次世代のワークフローを<br>その手に。</h1>
+                <p>PieCreator V6は、Blender 5.0に最適化されたハイブリッド・メニュー・エディターです。複雑な操作を指先一つのコマンドに集約し、クリエイティブを加速させます。</p>
+            </div>
+
+            <section id="features">
+                <div class="section-header">
+                    <i data-lucide="sparkles"></i>
+                    <h2>V6 Major Features</h2>
+                </div>
+                <div class="grid">
+                    <div class="card">
+                        <i data-lucide="archive"></i>
+                        <h3>Command Pool</h3>
+                        <p>不安定な録画からの脱却。検証済みの操作パーツを「倉庫」に集め、自在に組み合わせてマクロ化。失敗しない自動化の完成です。</p>
+                    </div>
+                    <div class="card">
+                        <i data-lucide="mouse-pointer-2"></i>
+                        <h3>Capture Value</h3>
+                        <p>「現在のこの数値」をそのままマクロの部品に。右クリック一発で数値設定を代入命令としてキャプチャし、確実に再現します。</p>
+                    </div>
+                    <div class="card">
+                        <i data-lucide="layout"></i>
+                        <h3>Hybrid UI Type</h3>
+                        <p>POPUPとDIALOGの厳格な分離。リアルタイムに変化を楽しむライブ操作と、OKボタンで慎重に決める確実な操作を使い分け。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="types">
+                <div class="section-header">
+                    <i data-lucide="layers"></i>
+                    <h2>Advanced UI Types</h2>
+                </div>
+                <div class="grid">
+                    <div class="card">
+                        <i data-lucide="activity"></i>
+                        <h3>POPUP (Live)</h3>
+                        <p>マウスを離すと消える軽快なインターフェース。スライダーの数値変更がその場で反映されるため、視覚的な微調整に最適です。</p>
+                    </div>
+                    <div class="card">
+                        <i data-lucide="check-square"></i>
+                        <h3>DIALOG (OK)</h3>
+                        <p>「OK/キャンセル」を伴う確実なUI。複数の項目をセットしてから一気に適用したい重厚なタスクに向いています。</p>
+                    </div>
+                    <div class="card">
+                        <i data-lucide="align-justify"></i>
+                        <h3>MENU (Vertical)</h3>
+                        <p>整理された垂直リスト。項目数が多く、視認性を重視したいメニューを美しくボックス表示します。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="guide">
+                <div class="section-header">
+                    <i data-lucide="map"></i>
+                    <h2>Getting Started</h2>
+                </div>
+                
+                <div class="step-list">
+                    <div class="step-item">
+                        <div class="step-content">
+                            <h4>素材を集める</h4>
+                            <p>Blenderの任意のボタンや数値の上で右クリック。「Add to Command Pool」でライブラリ（倉庫）にパーツを貯めます。</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-content">
+                            <h4>パーツを並べる</h4>
+                            <p>アドオン設定の「Library」タブを開き、パーツを上下ボタンで入れ替えて実行順序を整えます。</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-content">
+                            <h4>マクロを生成</h4>
+                            <p>必要なパーツにチェックを入れ、「ASSEMBLE MACRO」をクリック。選択したメニューに即座にマクロボタンが生成されます。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <i data-lucide="info" size="32"></i>
+                    <div>
+                        <h4>Professional Tip</h4>
+                        <p>複雑なコマンドは、まず一つずつ個別に登録して動作を確認し、最後にそれらを倉庫で合体させるのが最も確実な「絶対に動くマクロ」の作り方です。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="data">
+                <div class="section-header">
+                    <i data-lucide="save"></i>
+                    <h2>Data Management</h2>
+                </div>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem;">PieCreator V6は、あなたの設定を大切に守ります。</p>
+                <div class="grid">
+                    <div class="card">
+                        <i data-lucide="file-json"></i>
+                        <h3>Auto Sync</h3>
+                        <p>ショートカット設定やメニュー構造は、アドオンのJSONファイルにリアルタイム同期。Blenderの再起動後も完璧に復元されます。</p>
+                    </div>
+                    <div class="card">
+                        <i data-lucide="share-2"></i>
+                        <h3>Easy Export</h3>
+                        <p>作成した最強のメニューセットをボタン一つで出力。他のPCやコミュニティと簡単に共有できます。</p>
+                    </div>
+                </div>
+            </section>
+
+            <footer>
+                <p>&copy; 2026 PieCreator Development Team. Built for Blender Artists.</p>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>

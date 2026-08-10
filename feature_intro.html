@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PieCreator V10.2 Feature Introduction</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f1115;
+            --card-bg: rgba(30, 34, 42, 0.7);
+            --accent-color: #00d2ff;
+            --text-main: #e0e6ed;
+            --text-dim: #94a3b8;
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 80px 20px;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Outfit', sans-serif;
+            color: #fff;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 60px;
+            background: linear-gradient(135deg, #fff 0%, var(--accent-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+
+        .hero-desc {
+            text-align: center;
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            margin-bottom: 100px;
+        }
+
+        section {
+            margin-bottom: 120px;
+            animation: fadeIn 1s ease-out both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            font-size: 2.2rem;
+            border-left: 5px solid var(--accent-color);
+            padding-left: 20px;
+            margin-bottom: 40px;
+            display: flex;
+            align-items: center;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px;
+            margin-bottom: 40px;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 210, 255, 0.3);
+        }
+
+        .image-container {
+            width: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        img {
+            width: 100%;
+            display: block;
+            transition: transform 0.5s ease;
+        }
+
+        .card:hover img {
+            transform: scale(1.02);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .feature-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .feature-item h3 {
+            margin-top: 0;
+            font-size: 1.3rem;
+            color: var(--accent-color);
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        li {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        li::before {
+            content: "→";
+            color: var(--accent-color);
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .tip {
+            background: linear-gradient(135deg, rgba(0, 210, 255, 0.1), rgba(58, 123, 213, 0.1));
+            border: 1px solid rgba(0, 210, 255, 0.2);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+            margin-top: 60px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 60px 0;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .badge {
+            background: var(--accent-color);
+            color: #000;
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            margin-left: 15px;
+            text-transform: uppercase;
+        }
+
+        /* Micro-animations */
+        .hover-lift { transition: transform 0.2s ease; }
+        .hover-lift:hover { transform: translateY(-2px); }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PieCreator V10.2</h1>
+        <p class="hero-desc">最強のワークフローを構築するための、Blender メニュー管理の究極形。</p>
+
+        <section id="toolbar">
+            <h2>1. メインツールバー <span class="badge">Core</span></h2>
+            <div class="card">
+                <div class="image-container">
+                    <img src="docs/images/media__1777666772605.png" alt="Toolbar">
+                </div>
+                <div class="grid">
+                    <div class="feature-item">
+                        <h3>🛠️ 基本操作</h3>
+                        <ul>
+                            <li><strong>Reload:</strong> 設定を強制同期</li>
+                            <li><strong>Export/Import:</strong> JSONでの一括管理</li>
+                        </ul>
+                    </div>
+                    <div class="feature-item">
+                        <h3>🌐 デザイナー連携</h3>
+                        <ul>
+                            <li><strong>Designer:</strong> Webエディタを起動</li>
+                            <li><strong>Sync:</strong> データの相互同期</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="advanced">
+            <h2>2. 高度な自動化ツール <span class="badge">Pro</span></h2>
+            <div class="card">
+                <div class="image-container">
+                    <img src="docs/images/media__1777666772605.png" alt="Advanced Tools">
+                </div>
+                <div class="grid">
+                    <div class="feature-item">
+                        <h3>🔍 Scraper</h3>
+                        <p>Blender 内の既存メニューを解析。標準機能や他アドオンの具材を瞬時に抜き出し、自分のメニューにアペンドできます。</p>
+                    </div>
+                    <div class="feature-item">
+                        <h3>🔴 Macro Recorder</h3>
+                        <p>あなたの操作をリアルタイムに記憶。複雑な手順をボタン一つに凝縮し、作業を自動化します。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="sidebar">
+            <h2>3. ナビゲーター & ライブラリ</h2>
+            <div class="card">
+                <div class="image-container">
+                    <img src="docs/images/media__1777679354057.png" alt="Sidebar">
+                </div>
+                <div class="feature-item">
+                    <h3>📂 ツリー形式の階層管理</h3>
+                    <p>メニューの親子関係を視覚的に把握。巨大なプロジェクトでも迷子になりません。ライブラリからのドラッグ＆ドロップで効率的に構築可能です。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="editor">
+            <h2>4. メニューエディタ</h2>
+            <div class="card">
+                <div class="image-container">
+                    <img src="docs/images/media__1777679448889.png" alt="Menu Editor">
+                </div>
+                <div class="grid">
+                    <div class="feature-item">
+                        <h3>📦 デッキ管理</h3>
+                        <p>モデリング、スカルプト、ノード編集など、作業コンテキストに応じたメニューセットの切り替え。</p>
+                    </div>
+                    <div class="feature-item">
+                        <h3>🛠️ 表示条件設定</h3>
+                        <p>特定のモードやエリアでのみメニューを表示させる、高度なフィルタリング機能。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="designer-sidebar">
+            <h2>5. PieDesigner: Sidebar</h2>
+            <div class="card">
+                <div class="image-container">
+                    <img src="docs/images/media__1777679508551.png" alt="PieDesigner Sidebar">
+                </div>
+                <div class="feature-item">
+                    <h3>⚡ リアルタイム同期 (New!)</h3>
+                    <p><strong>Paste Items into Menu:</strong> Blender でキャプチャした内容を、現在開いているメニューの中身へ直接展開して統合。素材を組み合わせて一つのシステムを作る核となる機能です。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="canvas">
+            <h2>6. Visual Main Canvas</h2>
+            <div class="card">
+                <div class="image-container">
+                    <img src="docs/images/media__1777679618590.png" alt="Canvas">
+                </div>
+                <p>ノードグラフ形式でメニュー遷移を俯瞰し、8方向のスロットを実際の見た目通りにレイアウト。デザインと構造把握を同時に行えます。</p>
+            </div>
+        </section>
+
+        <section id="properties">
+            <h2>7. Properties & API Catalog</h2>
+            <div class="card">
+                <div class="image-container">
+                    <img src="docs/images/media__1777679655982.png" alt="Properties">
+                </div>
+                <div class="feature-item">
+                    <h3>🧠 パーソナライズされた API 知識</h3>
+                    <p>アドオンがあなたの Blender を「ディープスキャン」。他アドオンを含むすべてのオペレーターをカタログ化し、デザイナー上で強力な補完機能を提供します。</p>
+                </div>
+            </div>
+        </section>
+
+        <div class="tip">
+            <strong>PieCreator V10.2:</strong> Blender のパワーを解放し、あなただけの「究極の道具箱」を作り上げましょう。
+        </div>
+
+        <footer>
+            &copy; 2026 PieCreator Development Team. Built for professional workflows.
+        </footer>
+    </div>
+</body>
+</html>

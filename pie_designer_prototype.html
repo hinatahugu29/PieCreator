@@ -1,0 +1,878 @@
+    <style>
+        :root {
+            --bg-deep: #0a0a0a;
+            --bg-surface: rgba(20, 20, 20, 0.7);
+            --bg-item: rgba(45, 45, 45, 0.8);
+            --accent-blue: #00d2ff;
+            --accent-orange: #ff9d00;
+            --accent-green: #3cf08d;
+            --text-main: #f0f0f0;
+            --text-muted: #808080;
+            --border: rgba(255, 255, 255, 0.08);
+            --glass-blur: 20px;
+            --transition-speed: 0.25s;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: var(--bg-deep); color: var(--text-main); font-family: 'Inter', sans-serif; height: 100vh; display: flex; overflow: hidden; }
+
+        /* --- Sidebar (Left) --- */
+        .sidebar { width: 240px; background: #080808; border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 32px 16px; z-index: 100; }
+        .logo { font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 40px; padding: 0 8px; }
+        .logo span { color: var(--accent-blue); }
+        
+        .nav-section { margin-bottom: 32px; }
+        .nav-title { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 12px; padding: 0 8px; font-weight: 800; }
+        .nav-list { display: flex; flex-direction: column; gap: 4px; }
+        .nav-item { padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-size: 13px; color: #aaa; display: flex; align-items: center; justify-content: space-between; }
+        .nav-item:hover { background: rgba(255, 255, 255, 0.05); color: #fff; }
+        .nav-item.active { background: rgba(0, 210, 255, 0.1); color: var(--accent-blue); font-weight: 600; }
+        .nav-item .del-btn { opacity: 0; transition: 0.2s; padding: 2px 6px; border-radius: 4px; font-size: 10px; }
+        .nav-item:hover .del-btn { opacity: 0.4; }
+        .nav-item .del-btn:hover { opacity: 1; background: #ff4757; color: #fff; }
+
+        .data-actions { margin-top: auto; padding: 16px 8px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+        .btn-small { font-size: 11px; padding: 8px; width: 100%; justify-content: center; opacity: 0.7; }
+        .btn-small:hover { opacity: 1; }
+
+        /* --- Canvas (Center) --- */
+        .canvas { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background-image: radial-gradient(circle at 50% 50%, rgba(0, 210, 255, 0.03) 0%, transparent 70%), linear-gradient(rgba(255,255,255,0.01) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.01) 1px, transparent 1px); background-size: 100% 100%, 50px 50px, 50px 50px; perspective: 1200px; overflow: hidden; transition: 0.3s; }
+        
+        /* Split View Layout */
+        .canvas.split-mode { flex-direction: column; align-items: stretch; justify-content: flex-start; }
+        .canvas.split-mode #viewport { height: 50%; width: 100%; border-bottom: none; display: flex !important; position: relative; }
+        .canvas.split-mode #map-container { flex: 1; width: 100%; display: block !important; position: relative; z-index: 40; border-top: none; }
+        
+        .resizer { display: none; height: 6px; background: var(--border); cursor: row-resize; z-index: 100; transition: background 0.2s; }
+        .resizer:hover { background: var(--accent-blue); }
+        .canvas.split-mode .resizer { display: block; }
+
+        .breadcrumbs { position: absolute; top: 32px; left: 32px; display: flex; gap: 8px; font-size: 12px; color: var(--text-muted); background: rgba(0,0,0,0.4); padding: 8px 16px; border-radius: 30px; border: 1px solid var(--border); z-index: 60; pointer-events: auto; }
+        .breadcrumbs span { cursor: pointer; }
+        .breadcrumbs .current { color: var(--accent-blue); font-weight: 700; }
+
+        .editor-overlay { position: absolute; top: 32px; right: 32px; display: flex; gap: 12px; z-index: 50; }
+
+        /* --- Viewport Content --- */
+        .viewport-content { position: relative; width: 600px; height: 600px; display: flex; align-items: center; justify-content: center; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .viewport-content.diving { opacity: 0; transform: scale(0.8) translateZ(-100px); }
+        .viewport-content.emerging { opacity: 0; transform: scale(1.2) translateZ(100px); }
+
+        .pie-center { width: 100px; height: 100px; background: var(--bg-surface); backdrop-filter: blur(var(--glass-blur)); border: 1px solid rgba(0, 210, 255, 0.2); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; box-shadow: 0 0 40px rgba(0,0,0,0.6); }
+        .pie-center .type-label { font-size: 10px; letter-spacing: 2px; color: var(--accent-blue); font-weight: 800; opacity: 0.8; }
+
+        .pie-item { position: absolute; --base-transform: translate(-50%, -50%); transform: var(--base-transform); background: var(--bg-item); backdrop-filter: blur(var(--glass-blur)); border: 1px solid var(--border); padding: 12px 20px; border-radius: 10px; font-weight: 600; font-size: 13px; transition: transform 0.2s, border-color 0.2s, background 0.2s; cursor: pointer; min-width: 120px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.2); left: 50%; top: 50%; }
+        .pie-item:hover { background: #333; border-color: var(--accent-blue); transform: var(--base-transform) scale(1.05); z-index: 20; }
+        .pie-item.selected { border: 2px solid var(--accent-blue); background: rgba(0, 210, 255, 0.1); }
+
+        /* Perfect Circle Layout (Radius: 160px) */
+        .pie-n  { transform: translate(-50%, calc(-50% - 160px)) !important; --base-transform: translate(-50%, calc(-50% - 160px)); }
+        .pie-ne { transform: translate(calc(-50% + 113px), calc(-50% - 113px)) !important; --base-transform: translate(calc(-50% + 113px), calc(-50% - 113px)); }
+        .pie-e  { transform: translate(calc(-50% + 160px), -50%) !important; --base-transform: translate(calc(-50% + 160px), -50%); }
+        .pie-se { transform: translate(calc(-50% + 113px), calc(-50% + 113px)) !important; --base-transform: translate(calc(-50% + 113px), calc(-50% + 113px)); }
+        .pie-s  { transform: translate(-50%, calc(-50% + 160px)) !important; --base-transform: translate(-50%, calc(-50% + 160px)); }
+        .pie-sw { transform: translate(calc(-50% - 113px), calc(-50% + 113px)) !important; --base-transform: translate(calc(-50% - 113px), calc(-50% + 113px)); }
+        .pie-w  { transform: translate(calc(-50% - 160px), -50%) !important; --base-transform: translate(calc(-50% - 160px), -50%); }
+        .pie-nw { transform: translate(calc(-50% - 113px), calc(-50% - 113px)) !important; --base-transform: translate(calc(-50% - 113px), calc(-50% - 113px)); }
+
+        .popup-container { width: 320px; background: var(--bg-surface); backdrop-filter: blur(var(--glass-blur)); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 30px 60px rgba(0,0,0,0.5); overflow: hidden; }
+        .popup-header { padding: 16px 20px; background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 800; color: var(--accent-blue); text-transform: uppercase; }
+        .popup-list { padding: 8px; }
+        .popup-row { padding: 12px 16px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-size: 14px; margin-bottom: 2px; display: flex; align-items: center; gap: 12px; }
+        .popup-row:hover { background: rgba(255, 255, 255, 0.05); }
+        .popup-row.selected { background: rgba(0, 210, 255, 0.1); color: var(--accent-blue); }
+
+        /* --- Properties (Right) --- */
+        .properties { width: 300px; background: #080808; border-left: 1px solid var(--border); display: flex; flex-direction: column; padding: 32px 20px; z-index: 100; overflow-y: auto; }
+        .prop-title { font-size: 16px; font-weight: 700; margin-bottom: 24px; color: var(--accent-blue); }
+        .prop-group { margin-bottom: 20px; }
+        .prop-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; font-weight: 800; }
+        .input-text { width: 100%; background: #151515; border: 1px solid var(--border); padding: 10px; border-radius: 6px; color: #fff; font-size: 12px; font-family: 'Inter', sans-serif; }
+        .input-text:focus { outline: none; border-color: var(--accent-blue); }
+
+        .type-selector { display: flex; background: #151515; padding: 4px; border-radius: 8px; gap: 4px; }
+        .type-btn { flex: 1; padding: 6px; font-size: 10px; font-weight: 800; text-align: center; border-radius: 4px; cursor: pointer; color: #666; }
+        .type-btn.active { background: var(--accent-blue); color: #000; }
+
+        .btn { background: #222; border: 1px solid var(--border); color: #fff; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .btn:hover { background: #333; }
+        .btn-primary { background: var(--accent-blue); border: none; color: #000; }
+
+        /* --- Map View --- */
+        #map-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; background: #050505; z-index: 40; overflow: auto; }
+        .map-svg { position: absolute; top: 0; left: 0; width: 2000px; height: 2000px; pointer-events: none; }
+        .map-node { position: absolute; background: var(--bg-item); border: 1px solid var(--border); padding: 16px; border-radius: 12px; min-width: 180px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); cursor: pointer; transition: 0.2s; z-index: 2; }
+        .map-node:hover { border-color: var(--accent-blue); transform: translateY(-4px); }
+        .map-node .m-type { font-size: 9px; color: var(--accent-blue); font-weight: 800; margin-bottom: 4px; }
+        .map-node .m-name { font-size: 14px; font-weight: 700; }
+        .map-node.active { border-color: var(--accent-blue); box-shadow: 0 0 20px rgba(0, 210, 255, 0.4); z-index: 50; }
+        .map-node.orphan { opacity: 0.5; border-style: dashed; filter: grayscale(0.5); }
+        .map-node.orphan::after { content: "ORPHAN"; position: absolute; top: -12px; right: 0; font-size: 8px; color: #ff4757; font-weight: bold; }
+        .map-link-label { position: absolute; background: var(--bg-surface); backdrop-filter: blur(10px); border: 1px solid var(--border); padding: 4px 10px; border-radius: 20px; font-size: 10px; color: var(--text-muted); pointer-events: none; transform: translate(-50%, -50%); z-index: 5; white-space: nowrap; }
+
+        /* --- Integrated Library Search --- */
+        .lib-search-box { margin-top: 16px; border-top: 1px solid var(--border); pt: 16px; }
+        .lib-results { max-height: 250px; overflow-y: auto; background: #0a0a0a; border: 1px solid var(--border); border-radius: 8px; margin-top: 8px; }
+        .lib-item { padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; }
+        .lib-item:hover { background: rgba(0, 210, 255, 0.1); }
+        .lib-id { font-size: 9px; color: var(--accent-blue); font-family: monospace; }
+        .lib-name { font-size: 11px; font-weight: 600; margin-top: 2px; }
+
+        /* --- History --- */
+        .lib-history { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 12px; }
+        .history-list { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+        .history-tag { font-size: 9px; background: #222; border: 1px solid var(--border); padding: 2px 8px; border-radius: 4px; cursor: pointer; color: var(--text-muted); }
+        .history-tag:hover { border-color: var(--accent-blue); color: #fff; }
+
+        .toggle-switch { display: flex; align-items: center; gap: 8px; font-size: 11px; margin-bottom: 8px; cursor: pointer; }
+        .toggle-switch input { cursor: pointer; }
+
+        .hint { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 11px; color: var(--text-muted); pointer-events: none; z-index: 100; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="logo"><span>Pie</span>Designer</div>
+        
+        <div class="nav-section">
+            <div class="nav-title">Project Menus</div>
+            <div class="nav-list" id="menu-list">
+                <!-- Loaded from Data -->
+            </div>
+        </div>
+
+        <div class="data-actions">
+            <button class="btn btn-small" id="btn-map" onclick="toggleMapView()">🗺️ Toggle Graph View</button>
+            <button class="btn btn-small" id="btn-split" onclick="toggleSplitView()">✂️ Split View</button>
+            <button class="btn btn-small" onclick="document.getElementById('import-catalog').click()">📖 Load Catalog</button>
+            <input type="file" id="import-catalog" style="display:none" onchange="loadCatalog(event)">
+            <button class="btn btn-small" onclick="document.getElementById('import-file').click()">📂 Import JSON</button>
+            <input type="file" id="import-file" style="display:none" onchange="importData(event)">
+            <button class="btn btn-small" onclick="exportData()">💾 Export JSON</button>
+            <button class="btn btn-small" style="color:#ff6b6b;" onclick="resetData()">♻ Reset All</button>
+        </div>
+    </div>
+
+    <div class="canvas">
+        <div class="breadcrumbs" id="breadcrumb">
+            <span onclick="goToRoot()">Root</span>
+        </div>
+
+        <div class="editor-overlay">
+            <button class="btn-primary btn" onclick="exportData()">Push to Blender</button>
+        </div>
+
+        <div class="viewport-content" id="viewport"></div>
+        <div class="resizer" id="resizer"></div>
+        <div id="map-container">
+            <svg class="map-svg" id="map-svg"></svg>
+            <div id="map-nodes"></div>
+        </div>
+        <div class="hint">Map Mode: Select a node to edit. Nodes are connected to their submenus.</div>
+    </div>
+
+    <div class="properties">
+        <!-- New: Menu Global Settings -->
+        <div style="margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border);">
+            <div class="prop-label" style="color:var(--accent-blue);">Current Menu Settings</div>
+            <div class="prop-group">
+                <div class="prop-label">Menu Name</div>
+                <input type="text" class="input-text" id="m-name" oninput="saveMenuChange()">
+            </div>
+            <div class="prop-group">
+                <div class="prop-label">Menu Type</div>
+                <div class="type-selector">
+                    <div class="type-btn" id="mt-pie" onclick="setMenuT('PIE')">PIE</div>
+                    <div class="type-btn" id="mt-pop" onclick="setMenuT('POPUP')">POPUP</div>
+                </div>
+            </div>
+            <button class="btn btn-small" style="background:rgba(255, 71, 87, 0.1); color:#ff4757; border-color:rgba(255, 71, 87, 0.2); margin-top:12px;" 
+                    onclick="deleteMenu(null, currentMenuId)">🗑 Delete This Menu</button>
+        </div>
+
+        <div class="prop-title" id="item-title">Select Item</div>
+        <div id="prop-content" style="display:none">
+            <div class="prop-group">
+                <div class="prop-label">Label</div>
+                <input type="text" class="input-text" id="p-label" oninput="saveChange()">
+            </div>
+            <div class="prop-group">
+                <div class="prop-label">Action Type</div>
+                <div class="type-selector">
+                    <div class="type-btn" id="t-cmd" onclick="setT('COMMAND')">CMD</div>
+                    <div class="type-btn" id="t-sub" onclick="setT('SUBMENU')">SUB</div>
+                </div>
+            </div>
+            <div id="fields-cmd">
+                <div class="prop-group">
+                    <div class="prop-label">Icon</div>
+                    <input type="text" class="input-text" id="p-icon" oninput="saveChange()" placeholder="e.g. MESH_CUBE">
+                    
+                    <!-- Icon Search Box -->
+                    <div class="lib-search-box" style="margin-top:8px; border-top:none; padding-top:0;">
+                        <input type="text" id="icon-search-input" class="input-text" style="font-size:10px; padding:6px;" placeholder="Search Icon (e.g. 'cube')..." oninput="searchIcons()">
+                        <div class="lib-results" id="icon-results-list" style="max-height:120px;">
+                            <div style="text-align:center; padding:10px; font-size:10px; color:var(--text-muted);">Type to search icons...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="prop-group">
+                    <div class="prop-label">Command</div>
+                    <textarea class="input-text" style="height:80px; font-family:monospace; font-size:11px;" oninput="updateItem('cmd', this.value)" id="p-cmd"></textarea>
+                </div>
+
+                <div class="lib-search-box">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div class="prop-label">📚 API Library</div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="macro-mode" onchange="renderAll()"> Macro Mode
+                        </label>
+                    </div>
+                    <input type="text" id="lib-search-input" class="input-text" placeholder="Search & Add (e.g. 'mesh sub')..." oninput="searchCatalog()">
+                    <div class="lib-results" id="lib-results-list">
+                        <div style="text-align:center; padding:10px; font-size:10px; color:var(--text-muted);">Type to search...</div>
+                    </div>
+
+                    <div class="lib-history" id="lib-history-area">
+                        <div class="prop-label" style="font-size:10px; color:var(--text-muted);">Recent History</div>
+                        <div class="history-list" id="history-items"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="fields-sub" style="display:none">
+                <div class="prop-group">
+                    <div class="prop-label">Link To</div>
+                    <select class="input-text" id="p-sub-id" onchange="saveChange()"></select>
+                </div>
+            </div>
+            <button class="btn btn-small" style="width:100%; margin-top:20px; background:#ff4757; color:#fff;" onclick="deleteItem()">🗑 Delete Item</button>
+        </div>
+    </div>
+
+    <script>
+        let config = {
+            active_deck: "default",
+            menus: [
+                { id: "main_pie", name: "Main Menu", type: "PIE", items: [
+                    { id: "i1", label: "Object Mode", type: "COMMAND", cmd: "bpy.ops.object.mode_set(mode='OBJECT')", dir: "pie-n" },
+                    { id: "i2", label: "Modeling Tools", type: "SUBMENU", menu_id: "mod_popup", dir: "pie-w" }
+                ]},
+                { id: "mod_popup", name: "Modeling Utils", type: "POPUP", items: [
+                    { id: "s1", label: "Subdivide", type: "COMMAND", cmd: "bpy.ops.mesh.subdivide()" }
+                ]}
+            ]
+        };
+
+        let currentMenuId = "main_pie";
+        let selectedId = null;
+        let isMapView = false;
+        let isSplitView = false;
+        let blenderCatalog = null;
+        let commandHistory = [];
+
+        function init() {
+            const saved = localStorage.getItem('pie_designer_config');
+            if (saved) config = JSON.parse(saved);
+            const savedHistory = localStorage.getItem('pie_designer_history');
+            if (savedHistory) commandHistory = JSON.parse(savedHistory);
+            renderAll();
+        }
+
+        function loadCatalog(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (re) => {
+                blenderCatalog = JSON.parse(re.target.result);
+                alert(`Catalog Loaded: ${Object.keys(blenderCatalog.modules).length} modules found.`);
+                renderAll();
+            };
+            reader.readAsText(file);
+        }
+
+        function findItem(id) {
+            for (const m of config.menus) {
+                const found = m.items.find(i => i.id === id);
+                if (found) return found;
+            }
+            return null;
+        }
+
+        function searchCatalog() {
+            const searchInput = document.getElementById('lib-search-input');
+            if (!searchInput) return;
+            const query = searchInput.value.toLowerCase();
+            const resultsDiv = document.getElementById('lib-results-list');
+            if (!blenderCatalog) {
+                resultsDiv.innerHTML = '<div style="text-align:center; padding:10px; font-size:10px; color:var(--text-muted);">Please load catalog first.</div>';
+                return;
+            }
+            resultsDiv.innerHTML = '';
+
+            if (query.length < 2) {
+                resultsDiv.innerHTML = '<div style="text-align:center; padding:10px; font-size:10px; color:var(--text-muted);">Type at least 2 chars...</div>';
+                return;
+            }
+
+            const queryParts = query.split(' ').filter(p => p.length > 0);
+            const matches = [];
+
+            for (const mod in blenderCatalog.modules) {
+                for (const op of blenderCatalog.modules[mod]) {
+                    const fullText = `${op.id} ${op.name} ${op.desc}`.toLowerCase();
+                    if (queryParts.every(part => fullText.includes(part))) {
+                        matches.push(op);
+                    }
+                    if (matches.length > 50) break;
+                }
+                if (matches.length > 50) break;
+            }
+
+            resultsDiv.innerHTML = matches.map(op => `
+                <div class="lib-item" onclick="applyOperator('${op.id}')">
+                    <div class="lib-id">${op.id}</div>
+                    <div class="lib-name">${op.name}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderHistory() {
+            const area = document.getElementById('history-items');
+            if (!area) return;
+            area.innerHTML = commandHistory.map(id => `
+                <div class="history-tag" onclick="applyOperator('${id}')">${id.split('.').pop()}</div>
+            `).join('');
+        }
+
+        function searchIcons() {
+            const input = document.getElementById('icon-search-input');
+            const resultsDiv = document.getElementById('icon-results-list');
+            if (!blenderCatalog || !blenderCatalog.icons) return;
+            
+            const query = input.value.toLowerCase();
+            if (query.length < 2) {
+                resultsDiv.innerHTML = '<div style="text-align:center; padding:10px; font-size:10px; color:var(--text-muted);">Type at least 2 chars...</div>';
+                return;
+            }
+
+            const matches = blenderCatalog.icons.filter(icon => icon.toLowerCase().includes(query)).slice(0, 50);
+            resultsDiv.innerHTML = matches.map(icon => `
+                <div class="lib-item" onclick="applyIcon('${icon}')" style="padding:4px 10px;">
+                    <div class="lib-id" style="font-size:10px; color:#fff;">${icon}</div>
+                </div>
+            `).join('');
+        }
+
+        function applyIcon(icon) {
+            const item = findItem(selectedId);
+            if (item) {
+                item.icon = icon;
+                renderAll();
+            }
+        }
+
+        function applyOperator(id) {
+            const item = findItem(selectedId);
+            if (item) {
+                const isMacro = document.getElementById('macro-mode').checked;
+                const newCmd = `bpy.ops.${id}()`;
+                
+                if (isMacro && item.cmd && item.cmd.trim().length > 0) {
+                    const currentCmd = item.cmd.trim();
+                    const separator = currentCmd.endsWith(';') ? ' ' : '; ';
+                    item.cmd = currentCmd + separator + newCmd;
+                } else {
+                    item.cmd = newCmd;
+                }
+
+                // Add to History
+                if (!commandHistory.includes(id)) {
+                    commandHistory.unshift(id);
+                    if (commandHistory.length > 15) commandHistory.pop();
+                    localStorage.setItem('pie_designer_history', JSON.stringify(commandHistory));
+                }
+                
+                renderAll();
+            } else {
+                alert("No item selected to apply command.");
+            }
+        }
+
+        function deleteItem() {
+            if (!selectedId) {
+                console.warn("Delete failed: No item selected.");
+                return;
+            }
+            if (!confirm("Delete this item?")) return;
+            
+            let found = false;
+            for (const m of config.menus) {
+                const idx = m.items.findIndex(i => i.id === selectedId);
+                if (idx !== -1) {
+                    m.items.splice(idx, 1);
+                    found = true;
+                    break;
+                }
+            }
+            
+            if (found) {
+                selectedId = null;
+                renderAll();
+            } else {
+                console.error("Delete failed: Item not found in config.");
+            }
+        }
+
+        function deleteMenu(e, id) {
+            if (e) e.stopPropagation();
+            
+            const rootId = config.menus[0].id;
+            if (id === rootId) {
+                alert("The Root menu cannot be deleted.");
+                return;
+            }
+            
+            const isReferenced = config.menus.some(m => m.items.some(it => it.type === 'SUBMENU' && it.menu_id === id));
+            const msg = isReferenced 
+                ? "This menu is referenced by another menu. Deleting it will break those links. Continue?" 
+                : "Are you sure you want to delete this menu?";
+                
+            if (!confirm(msg)) return;
+
+            config.menus = config.menus.filter(m => m.id !== id);
+            
+            // 消したメニューを表示中だった場合はルートに戻る
+            if (currentMenuId === id) {
+                currentMenuId = rootId;
+            }
+            selectedId = null;
+            renderAll();
+        }
+
+        function renderAll() {
+            renderSidebar();
+            if (isSplitView) {
+                renderCanvas();
+                renderMap();
+            } else if (isMapView) {
+                renderMap();
+            } else {
+                renderCanvas();
+            }
+            renderProperties();
+            renderMenuSettings();
+            renderHistory();
+            localStorage.setItem('pie_designer_config', JSON.stringify(config));
+        }
+
+        function toggleMapView() {
+            isSplitView = false;
+            isMapView = !isMapView;
+            updateDisplayModes();
+        }
+
+        function toggleSplitView() {
+            isMapView = false;
+            isSplitView = !isSplitView;
+            updateDisplayModes();
+        }
+
+        function updateDisplayModes() {
+            const canvas = document.querySelector('.canvas');
+            const viewport = document.getElementById('viewport');
+            const mapContainer = document.getElementById('map-container');
+
+            canvas.classList.toggle('split-mode', isSplitView);
+            
+            if (isSplitView) {
+                viewport.style.display = 'flex';
+                mapContainer.style.display = 'block';
+            } else if (isMapView) {
+                viewport.style.display = 'none';
+                mapContainer.style.display = 'block';
+            } else {
+                viewport.style.display = 'flex';
+                mapContainer.style.display = 'none';
+            }
+
+            document.getElementById('btn-map').classList.toggle('active', isMapView);
+            document.getElementById('btn-split').classList.toggle('active', isSplitView);
+            renderAll();
+        }
+
+        // --- Resizer Logic ---
+        let isDragging = false;
+        const resizer = document.getElementById('resizer');
+        const viewport = document.getElementById('viewport');
+
+        resizer.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            document.body.style.cursor = 'row-resize';
+            e.preventDefault();
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging || !isSplitView) return;
+            const canvas = document.querySelector('.canvas');
+            const canvasRect = canvas.getBoundingClientRect();
+            const relativeY = e.clientY - canvasRect.top;
+            const percentage = (relativeY / canvasRect.height) * 100;
+            if (percentage > 10 && percentage < 90) {
+                viewport.style.height = percentage + '%';
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            document.body.style.cursor = 'default';
+        });
+
+        function renderMap() {
+            const nodeContainer = document.getElementById('map-nodes');
+            const svg = document.getElementById('map-svg');
+            nodeContainer.innerHTML = '';
+            svg.innerHTML = '';
+
+            const levelX = 300;
+            const levelY = 150;
+            const positions = {};
+            let maxY = 0;
+
+            // Simple Auto-Layout (Recursive Tree)
+            function layout(menuId, x, y) {
+                if (positions[menuId]) return;
+                positions[menuId] = { x, y };
+                const menu = config.menus.find(m => m.id === menuId);
+                if (!menu) return;
+                
+                let childY = y;
+                menu.items.filter(it => it.type === 'SUBMENU' && it.menu_id).forEach((it, i) => {
+                    layout(it.menu_id, x + levelX, childY);
+                    childY += levelY;
+                    if (childY > maxY) maxY = childY;
+                });
+            }
+
+            // Start layout from all root menus (usually the first one)
+            layout(config.menus[0].id, 100, 100);
+
+            // Layout Orphans (Menus not visited during recursive layout)
+            let orphanX = 100;
+            let orphanY = maxY + 300;
+            if (orphanY < 600) orphanY = 800; // Minimum Y for orphans
+
+            config.menus.forEach(m => {
+                if (!positions[m.id]) {
+                    positions[m.id] = { x: orphanX, y: orphanY, isOrphan: true };
+                    orphanX += levelX;
+                    if (orphanX > 1500) {
+                        orphanX = 100;
+                        orphanY += levelY;
+                    }
+                }
+            });
+
+            // Draw Nodes
+            config.menus.forEach(m => {
+                const pos = positions[m.id];
+                const node = document.createElement('div');
+                node.className = `map-node ${m.id === currentMenuId ? 'active' : ''} ${pos.isOrphan ? 'orphan' : ''}`;
+                node.style.left = pos.x + 'px';
+                node.style.top = pos.y + 'px';
+                node.innerHTML = `<div class="m-type">${m.type}</div><div class="m-name">${m.name}</div>`;
+                
+                node.onclick = () => { 
+                    currentMenuId = m.id; 
+                    if (isSplitView) {
+                        renderAll(); // 分割表示中は表示モードを維持して更新のみ
+                    } else {
+                        isMapView = false;
+                        updateDisplayModes(); // 単独表示中はエディタへジャンプ
+                    }
+                };
+                nodeContainer.appendChild(node);
+
+                // Draw Bezier Links & Labels
+                m.items.filter(it => it.type === 'SUBMENU' && it.menu_id).forEach(it => {
+                    const childPos = positions[it.menu_id];
+                    if (childPos) {
+                        const startX = pos.x + 180;
+                        const startY = pos.y + 35;
+                        const endX = childPos.x;
+                        const endY = childPos.y + 35;
+                        
+                        // Draw Path
+                        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                        const cp1x = startX + (endX - startX) / 2;
+                        const cp2x = startX + (endX - startX) / 2;
+                        const d = `M ${startX} ${startY} C ${cp1x} ${startY}, ${cp2x} ${endY}, ${endX} ${endY}`;
+                        path.setAttribute("d", d);
+                        path.setAttribute("stroke", "var(--accent-blue)");
+                        path.setAttribute("stroke-width", "2");
+                        path.setAttribute("fill", "none");
+                        path.setAttribute("style", "opacity: 0.15;");
+                        svg.appendChild(path);
+
+                        // Draw Label Bubble at midpoint
+                        const label = document.createElement('div');
+                        label.className = 'map-link-label';
+                        label.style.left = (startX + endX) / 2 + 'px';
+                        label.style.top = (startY + endY) / 2 + 'px';
+                        label.innerText = it.label;
+                        nodeContainer.appendChild(label);
+                    }
+                });
+            });
+        }
+
+        function renderSidebar() {
+            const list = document.getElementById('menu-list');
+            list.innerHTML = config.menus.map(m => `
+                <div class="nav-item ${m.id === currentMenuId ? 'active' : ''}" onclick="switchMenu('${m.id}')">
+                    <span>${m.type === 'PIE' ? '🥧' : '🗂️'} ${m.name}</span>
+                    <span class="del-btn" onclick="deleteMenu(event, '${m.id}')">✕</span>
+                </div>
+            `).join('');
+
+            const select = document.getElementById('p-sub-id');
+            select.innerHTML = config.menus.map(m => `<option value="${m.id}">${m.name}</option>`).join('') + '<option value="new">+ Create New</option>';
+        }
+
+        function renderCanvas() {
+            const viewport = document.getElementById('viewport');
+            const menu = config.menus.find(m => m.id === currentMenuId);
+            if (!menu) return;
+
+            // パンくずリストの生成（親を探す）
+            let breadcrumbHtml = ``;
+            const parent = findParentMenu(currentMenuId);
+            
+            if (currentMenuId !== config.menus[0].id) {
+                breadcrumbHtml += `<span class="back-btn" onclick="goUp()" style="margin-right:12px; color:var(--accent-blue); font-weight:bold;">← Back</span>`;
+            }
+
+            breadcrumbHtml += `<span onclick="goToRoot()">Root</span>`;
+            
+            if (parent && parent.id !== config.menus[0].id) {
+                breadcrumbHtml += ` / <span onclick="switchMenu('${parent.id}')">${parent.name}</span>`;
+            }
+            if (currentMenuId !== config.menus[0].id) {
+                breadcrumbHtml += ` / <span class="current">${menu.name}</span>`;
+            }
+            document.getElementById('breadcrumb').innerHTML = breadcrumbHtml;
+
+            if (menu.type === 'PIE') {
+                const dirs = ['pie-n', 'pie-ne', 'pie-e', 'pie-se', 'pie-s', 'pie-sw', 'pie-w', 'pie-nw'];
+                // Blenderの優先順位順 (W, E, S, N, NW, NE, SW, SE)
+                const priority = ['pie-w', 'pie-e', 'pie-s', 'pie-n', 'pie-nw', 'pie-ne', 'pie-sw', 'pie-se'];
+                
+                viewport.innerHTML = `<div class="pie-container">
+                    <div class="pie-center" onclick="addNextItem()" title="Add Next (Blender Order)" style="cursor:pointer">
+                        <div class="type-label">PIE</div>
+                        <div style="font-size:18px; margin-top:4px;">＋</div>
+                    </div>` + 
+                    dirs.map(d => {
+                        const it = menu.items.find(i => i.dir === d);
+                        const pIdx = priority.indexOf(d) + 1;
+                        if (it) {
+                            const isSub = it.type === 'SUBMENU';
+                            return `<div class="pie-item ${d} ${it.id === selectedId ? 'selected' : ''}" 
+                                         onclick="selectIt('${it.id}')" 
+                                         ${isSub ? `ondblclick="dive('${it.menu_id}', '${it.id}')"` : ''}>
+                                <div style="position:absolute; top:-15px; left:50%; transform:translateX(-50%); font-size:9px; color:var(--text-muted); font-weight:bold;">#${pIdx}</div>
+                                ${it.label}
+                                ${isSub ? `<span class="dive-icon" onclick="event.stopPropagation(); dive('${it.menu_id}', '${it.id}')" style="color:var(--accent-blue); margin-left:8px; padding:4px;">❯</span>` : ''}
+                            </div>`;
+                        }
+                        return `<div class="pie-item ${d}" style="opacity:0.1; border-style:dashed;" onclick="addIt('${d}')">
+                            <div style="font-size:9px; margin-bottom:4px; opacity:0.5;">#${pIdx}</div>
+                            +
+                        </div>`;
+                    }).join('') + `</div>`;
+            } else {
+                viewport.innerHTML = `<div class="popup-container"><div class="popup-header">${menu.name}</div><div class="popup-list">` +
+                    menu.items.map(it => {
+                        const isSub = it.type === 'SUBMENU';
+                        return `<div class="popup-row ${it.id === selectedId ? 'selected' : ''}" 
+                                     onclick="selectIt('${it.id}')"
+                                     ${isSub ? `ondblclick="dive('${it.menu_id}', '${it.id}')"` : ''}>
+                            ⚓ ${it.label} 
+                            ${isSub ? `<span class="dive-icon" onclick="event.stopPropagation(); dive('${it.menu_id}', '${it.id}')" style="margin-left:auto; color:var(--accent-blue); padding:4px;">❯</span>` : ''}
+                        </div>`;
+                    }).join('') +
+                    `<div class="popup-row" style="opacity:0.3; justify-content:center;" onclick="addIt()">+ Add Item</div></div></div>`;
+            }
+        }
+
+        function renderMenuSettings() {
+            const menu = config.menus.find(m => m.id === currentMenuId);
+            if (!menu) return;
+            document.getElementById('m-name').value = menu.name;
+            document.getElementById('mt-pie').classList.toggle('active', menu.type === 'PIE');
+            document.getElementById('mt-pop').classList.toggle('active', menu.type === 'POPUP');
+        }
+
+        function renderProperties() {
+            const content = document.getElementById('prop-content');
+            if (!selectedId) { content.style.display = 'none'; return; }
+            content.style.display = 'block';
+
+            let it = null;
+            config.menus.forEach(m => {
+                const found = m.items.find(i => i.id === selectedId);
+                if (found) it = found;
+            });
+            if (!it) return;
+
+            document.getElementById('item-title').innerText = it.label;
+            document.getElementById('p-label').value = it.label;
+            document.getElementById('p-cmd').value = it.cmd || "";
+            document.getElementById('p-icon').value = it.icon || "";
+            document.getElementById('p-sub-id').value = it.menu_id || "";
+            
+            setT(it.type || 'COMMAND', true);
+        }
+
+        function findParentMenu(childId) {
+            return config.menus.find(m => m.items.some(it => it.type === 'SUBMENU' && it.menu_id === childId));
+        }
+
+        function switchMenu(id) { currentMenuId = id; selectedId = null; renderAll(); }
+        function selectIt(id) { selectedId = id; renderAll(); }
+
+        function dive(menuId, itemId) {
+            selectedId = itemId;
+            const viewport = document.getElementById('viewport');
+            viewport.classList.add('diving');
+            setTimeout(() => {
+                currentMenuId = menuId;
+                viewport.classList.remove('diving');
+                viewport.classList.add('emerging');
+                setTimeout(() => viewport.classList.remove('emerging'), 300);
+                renderAll();
+            }, 300);
+        }
+
+        function goUp() {
+            const parent = findParentMenu(currentMenuId);
+            if (parent) switchMenu(parent.id);
+            else goToRoot();
+        }
+
+        function goToRoot() { switchMenu(config.menus[0].id); }
+
+        function setMenuT(type) {
+            const menu = config.menus.find(m => m.id === currentMenuId);
+            if (menu) {
+                menu.type = type;
+                renderAll();
+            }
+        }
+
+        function saveMenuChange() {
+            const menu = config.menus.find(m => m.id === currentMenuId);
+            if (menu) {
+                menu.name = document.getElementById('m-name').value;
+                renderAll();
+            }
+        }
+
+        function setT(type, skip) {
+            document.getElementById('t-cmd').classList.toggle('active', type === 'COMMAND');
+            document.getElementById('t-sub').classList.toggle('active', type === 'SUBMENU');
+            document.getElementById('fields-cmd').style.display = type === 'COMMAND' ? 'block' : 'none';
+            document.getElementById('fields-sub').style.display = type === 'SUBMENU' ? 'block' : 'none';
+            
+            if (!skip) {
+                const menu = config.menus.find(m => m.items.some(i => i.id === selectedId));
+                const it = menu.items.find(i => i.id === selectedId);
+                
+                if (type === 'SUBMENU' && !it.menu_id) {
+                    const newMenuId = "m_" + Date.now();
+                    const newMenu = { id: newMenuId, name: it.label + " Sub", type: "POPUP", items: [] };
+                    config.menus.push(newMenu);
+                    it.menu_id = newMenuId;
+                }
+                saveChange();
+            }
+        }
+
+        function saveChange() {
+            let it = null;
+            config.menus.forEach(m => {
+                const found = m.items.find(i => i.id === selectedId);
+                if (found) it = found;
+            });
+            if (!it) return;
+
+            it.label = document.getElementById('p-label').value;
+            it.cmd = document.getElementById('p-cmd').value;
+            it.icon = document.getElementById('p-icon').value;
+            it.type = document.getElementById('t-cmd').classList.contains('active') ? 'COMMAND' : 'SUBMENU';
+            
+            const subId = document.getElementById('p-sub-id').value;
+            if (subId === 'new') {
+                const newMenuId = "m_" + Date.now();
+                const newMenu = { id: newMenuId, name: "New Submenu", type: "POPUP", items: [] };
+                config.menus.push(newMenu);
+                it.menu_id = newMenuId;
+            } else {
+                it.menu_id = subId;
+            }
+            renderAll();
+        }
+
+        function addIt(dir) {
+            const menu = config.menus.find(m => m.id === currentMenuId);
+            const newIt = { id: 'it_'+Date.now(), label: 'New Item', type: 'COMMAND', dir: dir };
+            menu.items.push(newIt);
+            selectedId = newIt.id;
+            renderAll();
+        }
+
+        function addNextItem() {
+            const menu = config.menus.find(m => m.id === currentMenuId);
+            if (menu.type !== 'PIE') return;
+            const priority = ['pie-w', 'pie-e', 'pie-s', 'pie-n', 'pie-nw', 'pie-ne', 'pie-sw', 'pie-se'];
+            for (const dir of priority) {
+                if (!menu.items.some(it => it.dir === dir)) {
+                    addIt(dir);
+                    return;
+                }
+            }
+            alert("All 8 slots are full.");
+        }
+
+        function exportData() {
+            const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'menus.json';
+            a.click();
+        }
+
+        function importData(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (re) => {
+                config = JSON.parse(re.target.result);
+                currentMenuId = config.menus[0].id;
+                renderAll();
+            };
+            reader.readAsText(file);
+        }
+
+        function resetData() {
+            if (confirm('Reset to default?')) {
+                localStorage.removeItem('pie_designer_config');
+                location.reload();
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

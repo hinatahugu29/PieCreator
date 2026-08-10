@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# 配布用にその都度作り直すもの。履歴に入れると差分が読めなくなる。
+*.zip
+
+# Blender
+*.blend1
+*.blend2
+
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini

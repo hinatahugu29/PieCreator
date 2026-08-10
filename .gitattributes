@@ -1,0 +1,13 @@
+# 改行はリポジトリ内では LF に正規化し、チェックアウト時に環境へ合わせる。
+* text=auto
+
+*.py   text eol=lf
+*.js   text eol=lf
+*.css  text eol=lf
+*.html text eol=lf
+*.md   text eol=lf
+*.json text eol=lf
+
+*.zip  binary
+*.png  binary
+*.blend binary

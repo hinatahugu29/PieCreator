@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blender Menu Hierarchy Handbook V3.2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --accent-color: #3d8bff;
+            --accent-hover: #5da0ff;
+            --text-main: #e0e0e0;
+            --text-muted: #888;
+            --border-color: #333;
+            --success-color: #4caf50;
+            --line-color: #444;
+            --tree-indent: 32px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 40px 20px;
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh;
+        }
+
+        header { width: 100%; max-width: 1100px; margin-bottom: 30px; text-align: center; }
+        h1 { font-size: 2.2rem; margin-bottom: 10px; color: #fff; }
+
+        .drop-zone {
+            width: 100%; max-width: 1100px; border: 2px dashed var(--border-color);
+            border-radius: 12px; padding: 60px; text-align: center; margin-bottom: 30px;
+            background: rgba(255,255,255,0.02); cursor: pointer; transition: 0.3s;
+        }
+        .drop-zone.drag-over { border-color: var(--accent-color); background: rgba(61, 139, 255, 0.1); }
+        .file-input-btn {
+            background: var(--accent-color); color: white; padding: 12px 30px;
+            border-radius: 8px; border: none; font-weight: 600; cursor: pointer;
+            transition: 0.2s;
+        }
+        .file-input-btn:hover { background: var(--accent-hover); transform: scale(1.05); }
+
+        .controls {
+            width: 100%; max-width: 1100px; position: sticky; top: 10px; z-index: 100;
+            background: rgba(18, 18, 18, 0.95); backdrop-filter: blur(10px);
+            padding: 20px; border-radius: 12px; border: 1px solid var(--border-color);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6); margin-bottom: 30px; display: none;
+        }
+        #searchInput {
+            width: 100%; padding: 14px 20px; background: #000; border: 1px solid var(--border-color);
+            border-radius: 8px; color: #fff; font-size: 1rem; outline: none;
+        }
+        #searchInput:focus { border-color: var(--accent-color); }
+
+        .tree-container {
+            width: 100%; max-width: 1100px; background: var(--card-bg);
+            border-radius: 12px; padding: 30px; border: 1px solid var(--border-color); display: none;
+        }
+
+        .tree-node { position: relative; margin-left: var(--tree-indent); }
+        .tree-node.root-node { margin-left: 0; }
+
+        .tree-node::before {
+            content: ''; position: absolute; left: -18px; top: 0;
+            width: 1px; height: 100%; background: var(--line-color);
+        }
+        .tree-node:last-child::before { height: 20px; }
+        .tree-node::after {
+            content: ''; position: absolute; left: -18px; top: 20px;
+            width: 15px; height: 1px; background: var(--line-color);
+        }
+        .root-node::before, .root-node::after { display: none; }
+
+        .node-content {
+            display: flex; align-items: center; padding: 10px 15px;
+            border-radius: 8px; cursor: pointer; transition: 0.2s;
+            margin-bottom: 4px; border: 1px solid transparent;
+        }
+        .node-content:hover { background: rgba(255,255,255,0.05); border-color: #444; }
+
+        .node-toggle {
+            width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+            margin-right: 10px; color: var(--text-muted); font-size: 0.7rem;
+            background: #2a2a2a; border-radius: 4px;
+        }
+        .node-toggle.expanded { transform: rotate(90deg); background: var(--accent-color); color: #fff; }
+        .no-children .node-toggle { visibility: hidden; }
+
+        .node-label { font-weight: 600; font-size: 1rem; color: #fff; margin-right: 15px; }
+        .node-id { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--accent-color); opacity: 0.8; flex-grow: 1; }
+
+        .badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; background: #333; color: #aaa; }
+
+        .copy-btn {
+            background: #2a2a2a; border: 1px solid #444; color: var(--text-muted);
+            cursor: pointer; padding: 6px 12px; border-radius: 6px; margin-left: 15px;
+            font-size: 0.75rem; transition: 0.2s;
+        }
+        .copy-btn:hover { background: #444; color: #fff; }
+
+        .children-container { display: none; }
+        .children-container.visible { display: block; }
+
+        .toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: var(--success-color); color: white; padding: 12px 30px;
+            border-radius: 50px; font-weight: 600; display: none; z-index: 2000;
+        }
+        .search-highlight { background: #ffeb3b; color: #000; border-radius: 2px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Blender Menu Hierarchy Handbook <span style="color: var(--accent-color)">V3.2</span></h1>
+    <p style="color: var(--text-muted)">複数ワードAND検索に対応した階層リファレンス</p>
+</header>
+
+<div class="drop-zone" id="dropZone">
+    <p style="font-size: 1.2rem; margin-bottom: 15px;">blender_menu_hierarchy.json をドロップ</p>
+    <p style="margin-bottom: 15px;">または</p>
+    <input type="file" id="fileInput" accept=".json" style="display: none;">
+    <button class="file-input-btn" onclick="document.getElementById('fileInput').click(); event.stopPropagation();">ファイルを選択</button>
+</div>
+
+<div class="controls" id="controls">
+    <input type="text" id="searchInput" placeholder="スペース区切りで複数ワード検索... (例: view3d mesh add)">
+    <div id="stats" style="margin-top: 10px; font-size: 0.85rem; color: var(--text-muted); display: flex; justify-content: space-between;">
+        <span id="matchCount"></span>
+        <span>IDをクリックでコピー</span>
+    </div>
+</div>
+
+<div class="tree-container" id="treeRoot"></div>
+
+<div id="toast" class="toast">コピーしました！</div>
+
+<script>
+    let rawData = {};
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const controls = document.getElementById('controls');
+    const treeRoot = document.getElementById('treeRoot');
+
+    fileInput.onchange = (e) => handleFile(e.target.files[0]);
+    dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); };
+    dropZone.ondragleave = () => dropZone.classList.remove('drag-over');
+    dropZone.ondrop = (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        handleFile(e.dataTransfer.files[0]);
+    };
+    dropZone.onclick = (e) => { if(e.target !== fileInput) fileInput.click(); };
+
+    function handleFile(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                rawData = JSON.parse(e.target.result);
+                processHierarchy();
+                dropZone.style.display = 'none';
+                controls.style.display = 'block';
+                treeRoot.style.display = 'block';
+                renderTree();
+            } catch (err) { alert('JSONの解析に失敗しました。'); }
+        };
+        reader.readAsText(file);
+    }
+
+    function processHierarchy() {
+        const ids = Object.keys(rawData).sort();
+        ids.forEach(id => {
+            rawData[id].virtualChildren = new Set(rawData[id].children || []);
+            rawData[id].parent = null;
+        });
+
+        ids.forEach(id => {
+            const parts = id.split('_');
+            if (parts.length > 3) {
+                for (let i = parts.length - 1; i > 2; i--) {
+                    const parentId = parts.slice(0, i).join('_');
+                    if (rawData[parentId] && parentId !== id) {
+                        rawData[parentId].virtualChildren.add(id);
+                        rawData[id].parent = parentId;
+                        break;
+                    }
+                }
+            }
+        });
+
+        ids.forEach(id => {
+            rawData[id].is_top = (rawData[id].parent === null);
+        });
+    }
+
+    function renderTree(filterStr = '') {
+        treeRoot.innerHTML = '';
+        const topNodes = Object.keys(rawData).filter(id => rawData[id].is_top);
+        let count = 0;
+
+        // 検索ワードをスペースで分割
+        const filters = filterStr.toLowerCase().split(/\s+/).filter(f => f.length > 0);
+
+        function createNode(id, depth = 0) {
+            const data = rawData[id];
+            const children = Array.from(data.virtualChildren);
+            const hasChildren = children.length > 0;
+
+            // すべての検索ワードが含まれているか (AND検索)
+            const matchesSelf = filters.length === 0 || filters.every(f => 
+                id.toLowerCase().includes(f) || data.label.toLowerCase().includes(f)
+            );
+            
+            let matchesAnyChild = false;
+            if (hasChildren) {
+                matchesAnyChild = children.some(cid => checkRecursive(cid, filters));
+            }
+
+            if (filters.length > 0 && !matchesSelf && !matchesAnyChild) return null;
+            if (matchesSelf) count++;
+
+            const nodeEl = document.createElement('div');
+            nodeEl.className = `tree-node ${depth === 0 ? 'root-node' : ''} ${hasChildren ? '' : 'no-children'}`;
+
+            const content = document.createElement('div');
+            content.className = 'node-content';
+            content.innerHTML = `
+                <div class="node-toggle ${filters.length > 0 || (depth < 1 && hasChildren) ? 'expanded' : ''}">${hasChildren ? '▶' : ''}</div>
+                <div class="node-label">${highlight(data.label, filters)}</div>
+                <div class="node-id">${highlight(id, filters)}</div>
+                ${hasChildren ? `<span class="badge">${children.length}</span>` : ''}
+                <button class="copy-btn" onclick="copyId(event, '${id}')">Copy</button>
+            `;
+
+            const childrenUI = document.createElement('div');
+            childrenUI.className = `children-container ${filters.length > 0 || (depth < 1 && hasChildren) ? 'visible' : ''}`;
+
+            if (hasChildren) {
+                content.onclick = (e) => {
+                    if(e.target.tagName === 'BUTTON') return;
+                    content.querySelector('.node-toggle').classList.toggle('expanded');
+                    childrenUI.classList.toggle('visible');
+                };
+                children.sort().forEach(cid => {
+                    const childEl = createNode(cid, depth + 1);
+                    if (childEl) childrenUI.appendChild(childEl);
+                });
+            }
+
+            nodeEl.appendChild(content);
+            nodeEl.appendChild(childrenUI);
+            return nodeEl;
+        }
+
+        topNodes.forEach(id => {
+            const el = createNode(id);
+            if (el) treeRoot.appendChild(el);
+        });
+
+        document.getElementById('matchCount').innerText = `${count} 件のメニューが見つかりました`;
+    }
+
+    function checkRecursive(id, filters) {
+        if (filters.length === 0) return true;
+        const data = rawData[id];
+        // AND検索
+        const matchesSelf = filters.every(f => 
+            id.toLowerCase().includes(f) || data.label.toLowerCase().includes(f)
+        );
+        if (matchesSelf) return true;
+        
+        return Array.from(data.virtualChildren).some(cid => checkRecursive(cid, filters));
+    }
+
+    function highlight(text, filters) {
+        if (filters.length === 0) return text;
+        let highlightedText = text;
+        // 各フィルタワードを順にハイライト
+        filters.forEach(f => {
+            const regex = new RegExp(`(${f})`, 'gi');
+            highlightedText = highlightedText.replace(regex, '<span class="search-highlight">$1</span>');
+        });
+        return highlightedText;
+    }
+
+    window.copyId = (e, id) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(id).then(() => {
+            const toast = document.getElementById('toast');
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 2000);
+        });
+    };
+
+    document.getElementById('searchInput').oninput = (e) => renderTree(e.target.value);
+</script>
+
+</body>
+</html>
