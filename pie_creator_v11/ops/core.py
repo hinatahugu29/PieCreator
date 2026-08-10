@@ -1,7 +1,7 @@
 import bpy
 import mathutils
 import blf
-from ..storage import load_config, save_config, load_menus, sanitize_command
+from ..storage import load_config, save_config, load_menus, sanitize_command, ensure_exec_context
 
 # --- HUD (通知) 表示用 ---
 hud_notifications = [] # (text, timestamp, x, y)
@@ -44,16 +44,43 @@ def draw_hud_callback(space_name):
 
 # --- 実行系ヘルパー ---
 
+def auto_invoke_enabled():
+    """自動 INVOKE の安全弁。プリファレンスが読めない場面では ON とみなす。"""
+    try:
+        addon = bpy.context.preferences.addons.get(__package__.split(".")[0])
+        if addon and addon.preferences:
+            return bool(getattr(addon.preferences, "auto_invoke_context", True))
+    except Exception:
+        pass
+    return True
+
+
 def execute_pie_command(command, label="Command"):
-    if not command: return False
+    """コマンド文字列を実行し、(成功したか, エラー文) を返す。
+
+    エラー文を返すのは、呼び出し側が self.report で画面に出せるようにするため。
+    以前はここで print するだけだったので、失敗はシステムコンソールにしか
+    現れず、利用者からは「押しても何も起きない」としか見えなかった。
+    実行コンテキストの取り違えも poll の失敗も同じ無反応に見えるため、
+    切り分けができない状態だった。
+    """
+    if not command:
+        return False, "Empty command"
+
     cmd = sanitize_command(command)
+    if auto_invoke_enabled():
+        # 取り込み済みの古い項目を救済するため、実行時にも補う。取り込み側
+        # (get_op_command) ですでに付いていれば、ここでは何もしない。
+        cmd = ensure_exec_context(cmd)
+
     try:
         global_dict = {"bpy": bpy, "context": bpy.context, "mathutils": mathutils}
         exec(cmd, global_dict)
-        return True
+        return True, ""
     except Exception as e:
-        print(f"PieCreator Error: {e}")
-        return False
+        message = f"{label}: {type(e).__name__}: {e}"
+        print(f"PieCreator Error: {message}\n  command: {cmd}")
+        return False, message
 
 def get_op_command(op):
     if not op: return ""
@@ -88,8 +115,16 @@ def get_op_command(op):
                     items_str = ", ".join(f"'{v}'" for v in sorted(val))
                     p_list.append(f"{p_id}={{ {items_str} }}")
                 else: p_list.append(f"{p_id}={repr(val)}")
-        return f"{cmd_base}({', '.join(p_list)})"
-    except: return ""
+        command = f"{cmd_base}({', '.join(p_list)})"
+        # ボタンを押したときと同じ挙動になるよう、取り込んだ時点で実行
+        # コンテキストを書き込む。項目エディタにもそのまま表示されるので、
+        # 利用者が 'EXEC_DEFAULT' に書き換えて上書きできる。
+        if auto_invoke_enabled():
+            command = ensure_exec_context(command)
+        return command
+    except Exception as e:
+        print(f"PieCreator: could not build command from operator: {type(e).__name__}: {e}")
+        return ""
 
 def get_op_label(op):
     if not op: return "未知の物"
@@ -206,13 +241,20 @@ class PIECREATOR_OT_Exec(bpy.types.Operator):
     bl_idname = "wm.pie_creator_exec"
     bl_label = "Execute Command"
     command: bpy.props.StringProperty()
+
+    def _run(self, label):
+        ok, message = execute_pie_command(self.command, label=label)
+        if not ok:
+            self.report({'ERROR'}, message)
+            return {'CANCELLED'}
+        return {'FINISHED'}
+
     def invoke(self, context, event):
         update_mouse_pos(event)
-        execute_pie_command(self.command, label="Exec")
-        return {'FINISHED'}
+        return self._run("Exec")
+
     def execute(self, context):
-        execute_pie_command(self.command, label="Exec")
-        return {'FINISHED'}
+        return self._run("Exec")
 
 class PIECREATOR_OT_CallMenu(bpy.types.Operator):
     bl_idname = "wm.pie_creator_call"
@@ -250,7 +292,9 @@ class PIECREATOR_OT_CallStack(bpy.types.Operator):
         if idx >= len(items): idx = 0
         item = items[idx]
         if item.get("type") == "COMMAND":
-            execute_pie_command(item.get("command", ""), label=f"Stack: {item.get('label')}")
+            ok, message = execute_pie_command(item.get("command", ""), label=f"Stack: {item.get('label')}")
+            if not ok:
+                self.report({'ERROR'}, message)
             show_hud(f"Stack: {item.get('label', 'Action')}")
         stack_indices[self.menu_id] = (idx + 1) % len(items)
         return {'FINISHED'}
@@ -265,7 +309,9 @@ class PIECREATOR_OT_StickyKey(bpy.types.Operator):
         menus = load_menus()
         menu = next((m for m in menus if m["id"] == self.menu_id), None)
         if not menu or len(menu.get("items", [])) <= idx: return
-        execute_pie_command(menu["items"][idx].get("command", ""), label=f"Sticky {label_prefix}")
+        ok, message = execute_pie_command(menu["items"][idx].get("command", ""), label=f"Sticky {label_prefix}")
+        if not ok:
+            self.report({'ERROR'}, message)
     def modal(self, context, event):
         if event.type == self.key_type and event.value == 'RELEASE':
             self.execute_sticky(1, "Release")

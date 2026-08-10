@@ -10,8 +10,24 @@ class PIECREATOR_Preferences(bpy.types.AddonPreferences):
     
     search_query: bpy.props.StringProperty(name="Search", description="Search menus by name or ID", default="")
 
+    auto_invoke_context: bpy.props.BoolProperty(
+        name="Run commands the way buttons do",
+        description=(
+            "Add 'INVOKE_DEFAULT' to captured bpy.ops calls, so they behave "
+            "the same as clicking the button they came from. Without it, "
+            "Python runs them with EXEC_DEFAULT, which skips invoke() -- file "
+            "browsers, dialogs and interactive tools then do nothing. "
+            "Turn this off only if it changes an existing menu for the worse; "
+            "a single item can always override it by writing an explicit "
+            "context in its command"
+        ),
+        default=True,
+    )
+
     def draw(self, context):
         layout = self.layout; config = load_config()
+
+        layout.prop(self, "auto_invoke_context")
         active_deck_id = config.get("active_deck", "default")
         menus = config.get("menus", []); decks = config.get("decks", [])
         wm = context.window_manager
