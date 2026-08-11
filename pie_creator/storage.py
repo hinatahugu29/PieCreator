@@ -1,102 +1,63 @@
 import json
 import os
-import re
+import shutil
 import bpy
 
-# bpy.ops.foo.bar() の第1引数に置ける実行コンテキスト。
-# https://docs.blender.org/api/current/bpy.ops.html
-EXEC_CONTEXTS = frozenset({
-    'INVOKE_DEFAULT', 'INVOKE_REGION_WIN', 'INVOKE_REGION_CHANNELS',
-    'INVOKE_REGION_PREVIEW', 'INVOKE_AREA', 'INVOKE_SCREEN',
-    'EXEC_DEFAULT', 'EXEC_REGION_WIN', 'EXEC_REGION_CHANNELS',
-    'EXEC_REGION_PREVIEW', 'EXEC_AREA', 'EXEC_SCREEN',
-})
-
-_OPS_CALL_RE = re.compile(
-    r"bpy\.ops\.[A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*\s*\("
+from .log import log_error
+# コマンド文字列の処理は bpy 非依存の command_text.py にある（単体テストのため）。
+# 既存の呼び出し側がここから import しているので、そのまま再公開する。
+from .command_text import (  # noqa: F401
+    EXEC_CONTEXTS, ensure_exec_context, sanitize_command, format_arg,
 )
 
 
-def ensure_exec_context(command, exec_context="INVOKE_DEFAULT"):
-    """bpy.ops 呼び出しに実行コンテキストを補う。
-
-    Python から `bpy.ops.foo.bar()` を引数なしで呼ぶと EXEC_DEFAULT になり、
-    **invoke() を飛ばして execute() だけが走る。** 一方、パネルやメニューの
-    ボタンが押されたときは INVOKE_DEFAULT で、invoke() から始まる。
-
-    PieCreator はボタンから取り込んだ内容を文字列として保存して exec する
-    ので、この差がそのまま落ちる。結果、invoke() に本体があるもの
-    （ファイルブラウザを開く、ダイアログを出す、モーダルを開始する)が
-    軒並み「押しても何も起きない」状態になっていた。
-
-    たとえば `bpy.ops.transform.translate()` は EXEC では移動量ゼロで何も
-    起きないが、INVOKE ならインタラクティブな移動が始まる。パイから呼んで
-    欲しいのは後者で、それはボタンを押したときの挙動と一致する。
-
-    invoke() を持たないオペレーターに INVOKE_DEFAULT を渡しても、Blender は
-    execute() にフォールバックする。そのため一律に付けて差し支えない。
-
-    すでに明示的な実行コンテキストが書かれている場合は触らない。利用者が
-    項目エディタで `'EXEC_DEFAULT'` と書けば、それが優先される。
-    """
-    if not command or "bpy.ops." not in command:
-        return command
-
-    out = []
-    pos = 0
-    for m in _OPS_CALL_RE.finditer(command):
-        out.append(command[pos:m.end()])
-        pos = m.end()
-
-        rest = command[pos:].lstrip()
-        if not rest:
-            continue
-
-        # 明示指定があれば尊重する
-        if rest[0] in "\"'":
-            quote = rest[0]
-            end = rest.find(quote, 1)
-            if end != -1 and rest[1:end] in EXEC_CONTEXTS:
-                continue
-
-        out.append(f"'{exec_context}'" if rest[0] == ")" else f"'{exec_context}', ")
-
-    out.append(command[pos:])
-    return "".join(out)
-
-
-def sanitize_command(command):
-    """コマンドの不要なインデントや改行を整理し、Blender固有の型表現を変換する"""
-    if not command: return ""
-    import re
-    cmd = command.strip()
-    
-    # Vector((...)) -> (...) のような変換
-    patterns = [
-        (r'Vector\(\((.*?)\)\)', r'(\1)'),
-        (r'Euler\(\((.*?)\)\)', r'(\1)'),
-        (r'Color\(\((.*?)\)\)', r'(\1)'),
-        (r'Quaternion\(\((.*?)\)\)', r'(\1)'),
-    ]
-    for pat, repl in patterns:
-        cmd = re.sub(pat, repl, cmd)
-    
-    return cmd
-
 def get_config_path():
-    import bpy
     config_dir = bpy.utils.user_resource('CONFIG', path='pie_creator', create=True)
     new_path = os.path.join(config_dir, "menus.json")
     
     old_path = os.path.join(os.path.dirname(__file__), "menus.json")
     if os.path.exists(old_path) and not os.path.exists(new_path):
         try:
-            import shutil
             shutil.move(old_path, new_path)
         except Exception as e:
-            print(f"PieCreator: Migration failed: {e}")
-            
+            log_error(f"設定ファイルの移行に失敗した: {old_path} -> {new_path}", e)
+
     return new_path
+
+
+def backup_config():
+    """現在の設定を menus.backup.json に退避し、そのパスを返す。
+
+    インポートは設定を丸ごと上書きするので、戻せる先を必ず1つ残しておく。
+    設定がまだ無い場合は何もせず None を返す。
+    """
+    path = get_config_path()
+    if not os.path.exists(path):
+        return None
+    backup_path = os.path.join(os.path.dirname(path), "menus.backup.json")
+    try:
+        shutil.copy2(path, backup_path)
+        return backup_path
+    except Exception as e:
+        log_error(f"設定のバックアップに失敗した: {backup_path}", e)
+        return None
+
+
+def count_commands(config):
+    """設定に含まれるコマンド項目の数を数える。
+
+    インポート確認ダイアログで「いくつの実行可能コマンドを取り込むのか」を
+    利用者に見せるために使う。コマンドは exec されるので、規模は伝えるべき情報。
+    """
+    total = 0
+    for menu in config.get("menus", []):
+        for item in menu.get("items", []):
+            if item.get("command"):
+                total += 1
+    for entry in config.get("command_pool", []):
+        if isinstance(entry, dict) and entry.get("command"):
+            total += 1
+    return total
 
 def load_config():
     path = get_config_path()
@@ -196,7 +157,7 @@ def load_config():
 
             return data
     except Exception as e:
-        print(f"PieCreator: Error loading config: {e}")
+        log_error(f"設定の読み込みに失敗した: {path}", e)
         return {
             "active_deck": "default", 
             "decks": [{"id": "default", "name": "Default Deck"}], 
@@ -237,9 +198,10 @@ def load_menus():
 def save_config(data):
     try:
         sync_shortcuts_to_config(data)
-    except:
-        pass
-        
+    except Exception as e:
+        # ショートカットの取り込みに失敗しても設定本体は保存する。
+        log_error("ショートカットの同期に失敗した（設定の保存は続行する）", e)
+
     path = get_config_path()
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
