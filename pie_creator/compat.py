@@ -1,6 +1,8 @@
 import bpy
 import blf
 
+from .log import log_error
+
 BLENDER_VERSION = bpy.app.version
 
 def get_shader(shader_name):
@@ -44,4 +46,4 @@ def safe_draw_text(font_id, text, x, y, size=20, color=(1.0, 0.8, 0.2, 1.0)):
         blf.position(font_id, x, y, 0)
         blf.draw(font_id, text)
     except Exception as e:
-        print(f"[PieCreator Compat] Text draw error: {e}")
+        log_error("テキストの描画に失敗した", e)

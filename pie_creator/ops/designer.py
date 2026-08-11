@@ -3,6 +3,8 @@ import os
 import json
 import webbrowser
 
+from ..log import log_debug, log_error
+
 class PIECREATOR_OT_OpenDesigner(bpy.types.Operator):
     """Scan Blender API and Open Web Designer"""
     bl_idname = "wm.pie_creator_open_designer"
@@ -37,7 +39,10 @@ class PIECREATOR_OT_OpenDesigner(bpy.types.Operator):
                         "name": rna.name or op_name,
                         "desc": rna.description or ""
                     })
-                except:
+                except Exception as e:
+                    # bpy.ops 全走査なので RNA を引けないものが数件は出る。
+                    # 通常運用では見せず、詳細ログのときだけ出す。
+                    log_debug(f"カタログ走査で {attr}.{op_name} を除外した: {type(e).__name__}: {e}")
                     continue
             if module_ops:
                 catalog["modules"][attr] = module_ops
@@ -91,14 +96,15 @@ class PIECREATOR_OT_PasteDesignerData(bpy.types.Operator):
             return {'CANCELLED'}
         try:
             data = json.loads(clipboard)
-        except:
-            self.report({'ERROR'}, "Clipboard content is not valid JSON.")
+        except Exception as e:
+            log_error("クリップボードの内容を JSON として読めなかった", e)
+            self.report({'ERROR'}, f"クリップボードが JSON ではありません: {type(e).__name__}: {e}")
             return {'CANCELLED'}
         if not isinstance(data, dict) or "type" not in data:
             self.report({'ERROR'}, "Unknown format. Please copy from PieDesigner.")
             return {'CANCELLED'}
 
-        from ..storage import load_config, save_config, generate_unique_id
+        from ..storage import load_config, save_config, generate_unique_id, backup_config
         config = load_config()
         existing_menus = config.get("menus", [])
         payload = data.get("payload")
@@ -111,8 +117,13 @@ class PIECREATOR_OT_PasteDesignerData(bpy.types.Operator):
         elif data["type"] == "PIE_CREATOR_PROJECT":
             new_menus = payload.get("menus", [])
             if self.import_mode == 'OVERWRITE':
+                # 既存メニューを全消去するので、戻せる先を必ず残す
+                backup_path = backup_config()
                 config["menus"] = new_menus
-                self.report({'INFO'}, f"Overwritten with {len(new_menus)} menus.")
+                if backup_path:
+                    self.report({'INFO'}, f"{len(new_menus)} メニューで上書きしました。以前の設定: {backup_path}")
+                else:
+                    self.report({'INFO'}, f"{len(new_menus)} メニューで上書きしました")
             else:
                 for nm in new_menus:
                     nm["id"] = generate_unique_id(nm["id"], existing_menus)
@@ -129,7 +140,10 @@ class PIECREATOR_OT_PasteDesignerData(bpy.types.Operator):
             data = json.loads(clipboard)
             if data.get("type") == "PIE_CREATOR_PROJECT":
                 return context.window_manager.invoke_props_dialog(self)
-        except: pass
+        except Exception as e:
+            # ここは「確認ダイアログを出すべきか」の判定でしかない。読めなければ
+            # execute 側が改めて検証してエラーを報告する。
+            log_debug(f"貼り付け内容の事前判定に失敗した: {type(e).__name__}: {e}")
         return self.execute(context)
 
 class PIECREATOR_OT_CopyDesignerData(bpy.types.Operator):

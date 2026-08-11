@@ -24,10 +24,23 @@ class PIECREATOR_Preferences(bpy.types.AddonPreferences):
         default=True,
     )
 
+    debug_logging: bpy.props.BoolProperty(
+        name="Verbose console log",
+        description=(
+            "Print detailed registration and menu-resolution logs to the system "
+            "console. Errors are always reported regardless of this setting; "
+            "turn this on only when tracking down why a menu or command "
+            "misbehaves"
+        ),
+        default=False,
+    )
+
     def draw(self, context):
         layout = self.layout; config = load_config()
 
-        layout.prop(self, "auto_invoke_context")
+        opts = layout.row(align=True)
+        opts.prop(self, "auto_invoke_context")
+        opts.prop(self, "debug_logging")
         active_deck_id = config.get("active_deck", "default")
         menus = config.get("menus", []); decks = config.get("decks", [])
         wm = context.window_manager

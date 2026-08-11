@@ -1,5 +1,6 @@
 import bpy
 from ..storage import load_menus, save_menus, load_config, save_config, generate_unique_id
+from ..log import log_debug
 from .core import get_label_from_command
 
 # ※ 状態管理用のセット（ui/components.py と共有される想定）
@@ -712,7 +713,10 @@ class PIECREATOR_OT_ClearShortcut(bpy.types.Operator):
                         if m_id == self.menu_id:
                             kmi.type = 'NONE'
                             found = True; break
-                    except: continue
+                    except Exception as e:
+                        # menu_id を持たないキーマップ項目が混ざり得る
+                        log_debug(f"キーマップ項目 {kmi.idname} を読めなかった: {type(e).__name__}: {e}")
+                        continue
         
         # UI更新を強制
         for area in context.screen.areas: area.tag_redraw()

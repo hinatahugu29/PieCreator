@@ -1,5 +1,25 @@
 import bpy
 from ..storage import load_config, load_menus
+from ..log import log_debug
+
+# poll / data_path はメニューを描画するたびに評価される。パイメニューは
+# 頻繁に再描画されるので、compile 済みのコードオブジェクトを使い回す。
+# 式そのものをキーにするため、項目を編集すれば自動的に別エントリになる。
+_expr_cache = {}
+
+
+def _compile_expr(expr):
+    code = _expr_cache.get(expr)
+    if code is None:
+        code = compile(expr, "<piecreator>", "eval")
+        _expr_cache[expr] = code
+    return code
+
+
+def clear_expr_cache():
+    """メニュー再登録時に呼ぶ。編集で使われなくなった式を溜め込まないため。"""
+    _expr_cache.clear()
+
 
 def draw_menu_items(layout, items, context, is_pie=False):
     """メニュー項目を描画する。
@@ -17,9 +37,10 @@ def draw_menu_items(layout, items, context, is_pie=False):
         poll_str = item.get("poll", "")
         if poll_str:
             try:
-                allowed = eval(poll_str, {"bpy": bpy, "context": context, "C": context, "D": bpy.data})
+                allowed = eval(_compile_expr(poll_str), {"bpy": bpy, "context": context, "C": context, "D": bpy.data})
                 if not allowed: continue
             except Exception as e:
+                log_debug(f"poll の評価に失敗した ({label}): {poll_str}: {type(e).__name__}: {e}")
                 layout.label(text=f"(Poll Error: {label})", icon='ERROR')
                 continue
         
@@ -33,10 +54,11 @@ def draw_menu_items(layout, items, context, is_pie=False):
             expand = item.get("expand", False)
             if path and prop:
                 try:
-                    data = eval(path, {"bpy": bpy, "context": context})
+                    data = eval(_compile_expr(path), {"bpy": bpy, "context": context})
                     layout.prop(data, prop, text=label if label else "", icon=icon if icon != 'NONE' else 'BLANK1', slider=use_slider, expand=expand)
                 except Exception as e:
-                    print(f"PieCreator Prop Error: path='{path}', prop='{prop}', error={type(e).__name__}({e})")
+                    # 描画のたびに通るので詳細ログ扱い。失敗は画面のラベルで伝わる。
+                    log_debug(f"プロパティを描画できなかった: path={path!r}, prop={prop!r}: {type(e).__name__}: {e}")
                     layout.label(text=f"(Prop Error: {prop} - {type(e).__name__})", icon='ERROR')
             continue
         elif item_type == "SNAP_PANEL":

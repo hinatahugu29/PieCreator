@@ -25,7 +25,9 @@ Blender アドオン「PieCreator」。アドオン本体は `pie_creator/` の�
 | プリファレンス画面の見た目 | `pie_creator/ui/components.py`, `ui/preferences.py` |
 | 外部エディタ（Web UI） | `pie_creator/designer/app.js`, `index.html` |
 | 設定ファイルの読み書き | `pie_creator/storage.py` |
+| コマンド文字列の組み立て・整形 | `pie_creator/command_text.py` |
 | Blender バージョン差の吸収 | `pie_creator/compat.py` |
+| ログ出力 | `pie_creator/log.py` |
 
 `pie_creator/designer/blender_catalog.js` は `ops/designer.py` が実行時に
 生成する成果物。手で編集しない。
@@ -47,9 +49,42 @@ Blender アドオン「PieCreator」。アドオン本体は `pie_creator/` の�
 - `__pycache__/`、`*.pyc`
 - `scratch/` に新しく作った使い捨てスクリプト（既存分は履歴として残している）
 
+## エラーの扱い
+
+**裸の `except:` を書かない。** 必ず `except Exception as e:` にして、
+`log.py` の `log_debug` / `log_error` のどちらかで理由を残す。
+
+- `log_error` — 利用者が困る失敗。常にコンソールへ出る
+- `log_debug` — 全走査で数件必ず出る類の失敗や、詳細な内部ログ。
+  プリファレンスの "Verbose console log" が ON のときだけ出る
+
+`print()` を直接書かない。かつて登録処理とメニュー呼び出しが無条件に
+print していて、コンソールが流れて肝心のエラーが埋もれていた。
+
+握り潰した失敗は「押しても何も起きない」という最悪の症状になる。
+オペレーターの中なら `self.report({'ERROR'}, ...)` で画面にも出す。
+
+毎フレーム通る箇所（描画・タイマー）で `log_error` を使わない。同じ
+失敗でコンソールが埋まる。`log_debug` にするか、`macro.py` の
+`_last_timer_error` のように同一の失敗を一度だけ報告する。
+
+## コマンド文字列を組み立てるとき
+
+引数の値は必ず `command_text.format_arg` か `repr()` を通す。
+`f"{name}='{value}'"` と手で引用符を付けると、値にアポストロフィが
+入ったとき（`Bob's Cube` のようなオブジェクト名は普通に存在する）
+壊れた Python を生成する。
+
 ## 動作確認
 
-Blender の Scripting ワークスペースで `tests/test_addon.py` を実行すると、
-アドオンを有効化してサンプルパイメニューを呼び出すところまで通る。
-スクリプト内の `addon_path` はこのリポジトリの絶対パスを指しているので、
-別の場所にクローンしたら書き換える。
+`command_text.py` は `bpy` に依存しない。ここを触ったら Blender 抜きで
+テストが走る:
+
+```
+python -m unittest discover -s tests
+```
+
+Blender が要る確認は `tests/test_addon.py`。Scripting ワークスペースで
+実行すると、アドオンを有効化してサンプルパイメニューを呼び出すところまで
+通る。スクリプト内の `addon_path` はこのリポジトリの絶対パスを指している
+ので、別の場所にクローンしたら書き換える。

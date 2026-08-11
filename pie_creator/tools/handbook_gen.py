@@ -3,6 +3,8 @@ import os
 import json
 import webbrowser
 
+from ..log import log_debug
+
 HANDBOOK_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="ja">
@@ -170,7 +172,11 @@ def generate_handbook(context):
             dummy_self = Dummy()
             dummy_self.layout = mock
             cls.draw(dummy_self, context)
-        except: return
+        except Exception as e:
+            # 描画に失敗したメニューはハンドブックから落とす。全メニュー走査なので
+            # 数件は必ず出る。通常運用では見せず、詳細ログのときだけ出す。
+            log_debug(f"ハンドブック生成で {menu_id} を除外した: {type(e).__name__}: {e}")
+            return
         
         items = []
         for item in mock.results:

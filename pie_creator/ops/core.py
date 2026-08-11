@@ -1,7 +1,11 @@
 import bpy
 import mathutils
 import blf
-from ..storage import load_config, save_config, load_menus, sanitize_command, ensure_exec_context
+from ..storage import (
+    load_config, save_config, load_menus, sanitize_command, ensure_exec_context,
+    format_arg,
+)
+from ..log import log_debug, log_error
 
 # --- HUD (通知) 表示用 ---
 hud_notifications = [] # (text, timestamp, x, y)
@@ -40,7 +44,7 @@ def draw_hud_callback(space_name):
         
         hud_notifications = alive
     except Exception as e:
-        print(f"[PieCreator HUD Error]: {e}")
+        log_error("HUD の描画に失敗した", e)
 
 # --- 実行系ヘルパー ---
 
@@ -79,7 +83,7 @@ def execute_pie_command(command, label="Command"):
         return True, ""
     except Exception as e:
         message = f"{label}: {type(e).__name__}: {e}"
-        print(f"PieCreator Error: {message}\n  command: {cmd}")
+        log_error(f"コマンドの実行に失敗した\n  command: {cmd}\n  {message}")
         return False, message
 
 def get_op_command(op):
@@ -106,15 +110,16 @@ def get_op_command(op):
                 val = getattr(props_source, p_id) if props_source else getattr(op, p_id, None)
                 if val is None or (not is_set and p_id != "type"): continue
                 
-                if isinstance(val, str): p_list.append(f"{p_id}='{val}'")
-                elif isinstance(val, bool): p_list.append(f"{p_id}={val}")
-                elif isinstance(val, (int, float)): p_list.append(f"{p_id}={val}")
-                elif isinstance(val, (mathutils.Vector, mathutils.Euler, mathutils.Color, mathutils.Quaternion)):
+                # 文字列は必ず repr を通す。手で引用符を付けると、値に
+                # アポストロフィが入ったとき（"Bob's Cube" のような
+                # オブジェクト名は普通に存在する）壊れた Python になる。
+                if isinstance(val, (mathutils.Vector, mathutils.Euler, mathutils.Color, mathutils.Quaternion)):
                     p_list.append(f"{p_id}={list(val[:])}")
                 elif isinstance(val, set):
-                    items_str = ", ".join(f"'{v}'" for v in sorted(val))
+                    items_str = ", ".join(repr(v) for v in sorted(val))
                     p_list.append(f"{p_id}={{ {items_str} }}")
-                else: p_list.append(f"{p_id}={repr(val)}")
+                else:
+                    p_list.append(format_arg(p_id, val))
         command = f"{cmd_base}({', '.join(p_list)})"
         # ボタンを押したときと同じ挙動になるよう、取り込んだ時点で実行
         # コンテキストを書き込む。項目エディタにもそのまま表示されるので、
@@ -123,7 +128,7 @@ def get_op_command(op):
             command = ensure_exec_context(command)
         return command
     except Exception as e:
-        print(f"PieCreator: could not build command from operator: {type(e).__name__}: {e}")
+        log_error("オペレーターからコマンド文字列を組み立てられなかった", e)
         return ""
 
 def get_op_label(op):
@@ -167,8 +172,9 @@ def get_op_label(op):
         
         # 5. 最終手段として ID 名をそのまま使う
         if idname: return idname
-    except: pass
-    
+    except Exception as e:
+        log_debug(f"ラベルの解決に失敗した (idname={idname}): {type(e).__name__}: {e}")
+
     return label if label else "未知の物"
 
 def get_prop_info(context):
@@ -200,18 +206,16 @@ def get_prop_info(context):
                                     base = f"bpy.context.active_object.modifiers['{mod.name}'].node_group"
                                     break
                         if not base:
-                            base = f"bpy.data.node_groups.get('{id_name}')"
-                            # node_groups fallback string
-                            base = f"bpy.data.node_groups['{id_name}']"
+                            base = f"bpy.data.node_groups[{id_name!r}]"
                 else:
                     cat = id_type_rna.lower() + "s"
-                    base = f"bpy.data.{cat}['{id_name}']"
+                    base = f"bpy.data.{cat}[{id_name!r}]"
             
             path = ptr.path_from_id()
             full_path = f"{base}.{path}" if path else base
             return full_path, prop.identifier, prop.name
     except Exception as e:
-        print(f"PieCreator Capture Prop Error: {e}")
+        log_error("プロパティのデータパスを解決できなかった", e)
     return None, None, None
 
 def get_label_from_command(command):
@@ -232,7 +236,8 @@ def get_label_from_command(command):
                         if op_rna and op_rna.name: return op_rna.name
                 # RNAがダメなら名前を整形 (primitive_cube_add -> Primitive Cube Add)
                 return name.replace("_", " ").title()
-        except: pass
+        except Exception as e:
+            log_debug(f"コマンド文字列からラベルを引けなかった ({command}): {type(e).__name__}: {e}")
     return "未知の物"
 
 # --- 実行オペレーター ---
@@ -357,40 +362,38 @@ class PIECREATOR_OT_CallMaster(bpy.types.Operator):
         menus = config.get("menus", [])
         active_deck = config.get("active_deck", "default")
         curr_mode = context.mode
-        
-        print(f"PieCreator V11: CallMaster (Mode: {curr_mode})")
-        print(f"  Deck: {active_deck} | Total Menus in list: {len(menus)}")
-        
+
+        log_debug(f"CallMaster (Mode: {curr_mode}, Deck: {active_deck}, Menus: {len(menus)})")
+
         # 1. 現在のモードに最適なメニューを探す
         for m in menus:
             m_id = m.get("id", "unknown")
             m_deck = m.get("deck_id", "default")
             modes = m.get("modes", [])
-            
-            print(f"  Checking menu: {m_id} (Deck: {m_deck}, Modes: {modes})")
-            
+
             if m_deck != active_deck:
-                print(f"    -> Skip: Deck mismatch ({m_deck} != {active_deck})")
+                log_debug(f"  skip {m_id}: デッキ不一致 ({m_deck} != {active_deck})")
                 continue
-                
+
             if curr_mode in modes:
-                print(f"    -> MATCH FOUND! Calling: {m_id}")
+                log_debug(f"  match {m_id}: モード {curr_mode}")
                 bpy.ops.wm.pie_creator_call(menu_id=m_id)
                 return {'FINISHED'}
-        
+
         # 2. 該当がなければマスターメニュー
         m_id = config.get("master_menu_id")
         if m_id:
-            print(f"  -> No match. Using Master Menu: {m_id}")
             # メニューが存在するか最終確認
             if any(m["id"] == m_id for m in menus):
+                log_debug(f"  マスターメニューを使う: {m_id}")
                 bpy.ops.wm.pie_creator_call(menu_id=m_id)
+            elif menus:
+                log_debug(f"  マスターメニュー {m_id} が見つからない。{menus[0]['id']} で代替する")
+                bpy.ops.wm.pie_creator_call(menu_id=menus[0]["id"])
             else:
-                if menus:
-                    print(f"  -> Master menu not found. Falling back to {menus[0]['id']}")
-                    bpy.ops.wm.pie_creator_call(menu_id=menus[0]["id"])
+                self.report({'WARNING'}, "呼び出せるメニューがありません")
         else:
-            print("  -> No match and no Master Menu set.")
+            self.report({'WARNING'}, "現在のモードに一致するメニューがなく、マスターメニューも未設定です")
         return {'FINISHED'}
 
 classes = (

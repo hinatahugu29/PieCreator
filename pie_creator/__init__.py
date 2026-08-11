@@ -12,6 +12,7 @@ import bpy
 import importlib
 
 from . import compat, storage, ops, ui
+from .log import log_debug, log_error
 
 # リロード対応
 if "storage" in locals():
@@ -26,8 +27,10 @@ addon_keymaps = []
 def unregister_dynamic_menus():
     global dynamic_classes
     for cls in dynamic_classes:
-        try: bpy.utils.unregister_class(cls)
-        except: pass
+        try:
+            bpy.utils.unregister_class(cls)
+        except Exception as e:
+            log_debug(f"動的メニュー {cls.__name__} の解除をスキップした: {type(e).__name__}: {e}")
     dynamic_classes.clear()
     
     # 静的メニュー以外を掃除
@@ -43,23 +46,23 @@ def unregister_dynamic_menus():
         if attr.startswith("PIECREATOR_MT_"):
             if attr in static_menus: continue
             cls = getattr(bpy.types, attr)
-            try: bpy.utils.unregister_class(cls)
-            except: pass
+            try:
+                bpy.utils.unregister_class(cls)
+            except Exception as e:
+                log_debug(f"残存メニュー {attr} の解除をスキップした: {type(e).__name__}: {e}")
 
 def register_dynamic_menus():
     global dynamic_classes
     unregister_dynamic_menus()
-    
+    # 編集で使われなくなった poll / data_path の式を溜め込まない
+    ui.menus.clear_expr_cache()
+
     config = storage.load_config()
     active_deck_id = config.get("active_deck", "default")
     menu_data = config.get("menus", [])
     
-    print(f"\n{'='*40}")
-    print(f"[PieCreator V11] Registration Log")
-    print(f"Active Deck: {active_deck_id}")
-    print(f"Total Menus: {len(menu_data)}")
-    print(f"{'='*40}")
-    
+    log_debug(f"メニュー登録開始 (Deck: {active_deck_id}, Menus: {len(menu_data)})")
+
     wm = bpy.context.window_manager
     wm.pie_creator_menus_search.clear()
     for m in menu_data:
@@ -81,28 +84,30 @@ def register_dynamic_menus():
         # すでに登録済みの場合は一度解除（衝突回避）
         old_cls = getattr(bpy.types, f"PIECREATOR_MT_{m_id}", None)
         if old_cls:
-            try: bpy.utils.unregister_class(old_cls)
-            except: pass
+            try:
+                bpy.utils.unregister_class(old_cls)
+            except Exception as e:
+                log_debug(f"PIECREATOR_MT_{m_id} の再登録前の解除に失敗した: {type(e).__name__}: {e}")
             
         try:
             bpy.utils.register_class(cls)
             if cls not in dynamic_classes: dynamic_classes.append(cls)
-            print(f"  + Registered: {status_str}")
-            
+
             # モードやエリアの制限があればログに出す
             modes = m.get("modes", [])
             areas = m.get("areas", [])
-            if modes or areas:
-                cond_str = []
-                if modes: cond_str.append(f"Modes: {', '.join(modes)}")
-                if areas: cond_str.append(f"Areas: {', '.join(areas)}")
-                print(f"      -> Context: {' / '.join(cond_str)}")
-                
+            cond_str = []
+            if modes: cond_str.append(f"Modes: {', '.join(modes)}")
+            if areas: cond_str.append(f"Areas: {', '.join(areas)}")
+            suffix = f" | {' / '.join(cond_str)}" if cond_str else ""
+            log_debug(f"  + {status_str}{suffix}")
+
         except Exception as e:
-            print(f"  X Failed: {status_str} | Error: {e}")
-            
-    print(f"{'='*40}\n")
-    
+            # 登録に失敗したメニューは呼び出しても出てこない。常に報告する。
+            log_error(f"メニューの登録に失敗した: {status_str}", e)
+
+    log_debug("メニュー登録完了")
+
     active_menu_ids = []
     for m in menu_data:
         if m.get("deck_id", "default") != active_deck_id: continue
@@ -276,7 +281,7 @@ def update_catalog_search(wm, context):
     
     # キャッシュが空なら構築
     if not _operator_catalog_cache:
-        print("PieCreator: Building operator catalog cache...")
+        log_debug("オペレーターカタログを構築中...")
         for module_name in dir(bpy.ops):
             if module_name.startswith("_"): continue
             module = getattr(bpy.ops, module_name)
@@ -286,8 +291,11 @@ def update_catalog_search(wm, context):
                 try:
                     op_rna = getattr(module, op_name).get_rna_type()
                     _operator_catalog_cache.append((op_rna.name, idname, op_rna.description))
-                except: continue
-        print(f"PieCreator: Cached {len(_operator_catalog_cache)} operators.")
+                except Exception as e:
+                    # bpy.ops 全走査なので RNA を引けないものが数件は出る
+                    log_debug(f"カタログから {idname} を除外した: {type(e).__name__}: {e}")
+                    continue
+        log_debug(f"オペレーターカタログを構築した: {len(_operator_catalog_cache)} 件")
 
     count = 0
     # キャッシュから検索（爆速）
@@ -318,8 +326,10 @@ def register():
     ]
     for p in prop_names:
         if hasattr(wm_type, p):
-            try: delattr(wm_type, p)
-            except: pass
+            try:
+                delattr(wm_type, p)
+            except Exception as e:
+                log_debug(f"既存プロパティ {p} の削除をスキップした: {type(e).__name__}: {e}")
 
     from .ops.io import PIECREATOR_ScrapedItem
     
@@ -369,25 +379,28 @@ def register():
         try:
             # 可能な限り標準的な API で試行
             icon_items = bpy.types.UILayout.bl_rna.functions['prop'].parameters['icon'].enum_items.keys()
-        except:
+        except Exception as standard_error:
             # フォールバック: 低レベル _bpy (Blender バージョンにより構造が異なる可能性がある)
+            log_debug(f"標準 API でのアイコン列挙に失敗した: {type(standard_error).__name__}: {standard_error}")
             try:
                 import _bpy
                 icon_items = _bpy.types.UILayout.bl_rna.functions['prop'].parameters['icon'].enum_items.keys()
-            except: pass
+            except Exception as fallback_error:
+                # アイコン検索欄が空になるので、理由は残す
+                log_error("アイコン一覧を取得できなかった（アイコン検索は使えない）", fallback_error)
         
         if icon_items:
             for icon in sorted(icon_items):
                 wm.pie_creator_icons_search.add().name = icon
     except Exception as e:
-        print(f"PieCreator: Icon init error (skipped): {e}")
+        log_error("アイコン検索リストの初期化に失敗した（アイコン検索は使えない）", e)
 
     # 2. Blender 標準メニューの検索用リスト初期化
     try:
         from .ops.io import init_blender_menus
         init_blender_menus(wm)
     except Exception as e:
-        print(f"PieCreator: Blender menu search init error: {e}")
+        log_error("メニュー検索リストの初期化に失敗した（Scraper の候補が出ない）", e)
 
     bpy.types.UI_MT_button_context_menu.append(draw_context_menu)
     setup_master_keymap()

@@ -1,5 +1,6 @@
 import bpy
 from ..storage import load_config, save_config, load_menus, save_menus
+from ..log import log_error
 
 class PIECREATOR_OT_AddToPool(bpy.types.Operator):
     bl_idname = "wm.pie_creator_add_to_pool"
@@ -31,14 +32,18 @@ class PIECREATOR_OT_CaptureValueAsCommand(bpy.types.Operator):
             try:
                 data = eval(path, {"bpy": bpy, "context": context})
                 val = getattr(data, prop)
-                val_str = f"'{val}'" if isinstance(val, str) else str(val)
+                # repr を通す。文字列に引用符を手で付けると値にアポストロフィが
+                # 入ったときに壊れた Python になる。
+                val_str = repr(val)
                 cmd = f"{path}.{prop} = {val_str}"
                 config = load_config()
                 config.setdefault("command_pool", []).append({"label": f"Set {label} to {val_str}", "command": cmd})
                 save_config(config)
                 context.window_manager.clipboard = cmd
                 return {'FINISHED'}
-            except: pass
+            except Exception as e:
+                log_error(f"現在値の取り込みに失敗した: {path}.{prop}", e)
+                self.report({'ERROR'}, f"値を取り込めません: {type(e).__name__}: {e}")
         return {'CANCELLED'}
 
 class PIECREATOR_OT_MovePoolItem(bpy.types.Operator):
