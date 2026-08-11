@@ -1,4 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 import bpy
+from ..log import ADDON_ID
 from ..storage import load_config
 from .components import (
     draw_sidebar, draw_menu_entry, get_clean_active_menu_id, 
@@ -6,7 +8,9 @@ from .components import (
 )
 
 class PIECREATOR_Preferences(bpy.types.AddonPreferences):
-    bl_idname = __package__.split(".")[0]
+    # Extensions 形式では __package__ が "bl_ext.<repo>.pie_creator" になる。
+    # 分解せずルートパッケージ名をそのまま使う（詳細は log.ADDON_ID を参照）。
+    bl_idname = ADDON_ID
     
     search_query: bpy.props.StringProperty(name="Search", description="Search menus by name or ID", default="")
 

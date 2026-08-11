@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """コマンド文字列の解析と整形。
 
 このモジュールは **bpy に依存しない**。Blender を起動しなくても素の Python で

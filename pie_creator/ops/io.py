@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 import bpy
 import os
 import json
@@ -46,6 +47,7 @@ class MockLayout:
 # --- オペレーター ---
 
 class PIECREATOR_OT_ExportSettings(bpy.types.Operator, ExportHelper):
+    """Save every deck, menu and shortcut to a .json file"""
     bl_idname = "wm.pie_creator_export"
     bl_label = "Export Settings"
     filename_ext = ".json"
@@ -111,6 +113,7 @@ class PIECREATOR_OT_ImportSettings(bpy.types.Operator, ImportHelper):
         return {'FINISHED'}
 
 class PIECREATOR_OT_ScrapeMenu(bpy.types.Operator):
+    """Read a built-in Blender menu and list its entries so they can be imported"""
     bl_idname = "wm.pie_creator_scrape_menu"
     bl_label = "Scrape Blender Menu"
     target_id: bpy.props.StringProperty(name="Menu ID")
@@ -160,6 +163,7 @@ class PIECREATOR_OT_ScrapeMenu(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_CommitImport(bpy.types.Operator):
+    """Add the selected analyzed entries to the chosen menu"""
     bl_idname = "wm.pie_creator_commit_import"
     bl_label = "Import Selected Items"
     target_menu_id: bpy.props.StringProperty(name="Destination Menu")
@@ -185,6 +189,7 @@ class PIECREATOR_OT_CommitImport(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_GenerateMenuHandbook(bpy.types.Operator):
+    """Generate an HTML reference of Blender's menus and open it in a browser"""
     bl_idname = "wm.pie_creator_generate_handbook"
     bl_label = "Generate Menu Handbook"
     def execute(self, context):
@@ -229,6 +234,7 @@ def init_blender_menus(wm):
         item.name = item_name
 
 class PIECREATOR_OT_CancelImport(bpy.types.Operator):
+    """Discard the analyzed entries without importing them"""
     bl_idname = "wm.pie_creator_cancel_import"
     bl_label = "Cancel Import"
     def execute(self, context):

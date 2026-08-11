@@ -1,8 +1,10 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 import bpy
 from ..storage import load_config, save_config, load_menus, save_menus
 from ..log import log_error
 
 class PIECREATOR_OT_AddToPool(bpy.types.Operator):
+    """Add the captured command to the command pool for later reuse"""
     bl_idname = "wm.pie_creator_add_to_pool"
     bl_label = "Add to Command Pool"
     command: bpy.props.StringProperty()
@@ -18,6 +20,7 @@ class PIECREATOR_OT_AddToPool(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_CaptureValueAsCommand(bpy.types.Operator):
+    """Store the current value of this property as a command that sets it again"""
     bl_idname = "wm.pie_creator_capture_value_as_cmd"
     bl_label = "Capture Current Value as Part"
     def execute(self, context):
@@ -47,6 +50,7 @@ class PIECREATOR_OT_CaptureValueAsCommand(bpy.types.Operator):
         return {'CANCELLED'}
 
 class PIECREATOR_OT_MovePoolItem(bpy.types.Operator):
+    """Reorder this command within the pool"""
     bl_idname = "wm.pie_creator_move_pool_item"
     bl_label = "Move Pool Item"
     index: bpy.props.IntProperty()
@@ -66,6 +70,7 @@ class PIECREATOR_OT_MovePoolItem(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_RemoveFromPool(bpy.types.Operator):
+    """Delete this command from the pool"""
     bl_idname = "wm.pie_creator_remove_from_pool"
     bl_label = "Remove from Pool"
     index: bpy.props.IntProperty()
@@ -77,6 +82,7 @@ class PIECREATOR_OT_RemoveFromPool(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_PoolAssembleToMenu(bpy.types.Operator):
+    """Add every selected pool command to the chosen menu"""
     bl_idname = "wm.pie_creator_pool_assemble"
     bl_label = "Assemble to Menu"
     menu_id: bpy.props.StringProperty()
@@ -99,6 +105,7 @@ class PIECREATOR_OT_PoolAssembleToMenu(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_TogglePoolSelection(bpy.types.Operator):
+    """Select or deselect this pool command"""
     bl_idname = "wm.pie_creator_toggle_pool_selection"
     bl_label = "Toggle Pool Selection"
     index: bpy.props.IntProperty()

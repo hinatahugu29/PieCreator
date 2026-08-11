@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 import bpy
 
 # 折りたたみ状態の管理（モジュールレベル）

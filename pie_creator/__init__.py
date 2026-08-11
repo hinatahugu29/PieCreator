@@ -1,10 +1,17 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# 旧来のアドオン形式 (Blender 4.2 未満) 用のメタデータ。Extensions 形式では
+# 参照されず、代わりに blender_manifest.toml が使われる。両方を配布できる
+# ように二重に持っているので、バージョンを上げるときは両方直す。
 bl_info = {
-    "name": "PieCreator V11",
+    "name": "PieCreator",
     "author": "hinata_hugu",
     "version": (11, 0, 0),
-    "blender": (5, 0, 0),
-    "location": "Preferences > Addons > PieCreator V11",
-    "description": "Smart Hybrid Nesting Menu Editor (V11) - Context-Aware Edition",
+    "blender": (4, 2, 0),
+    "location": "Preferences > Add-ons > PieCreator",
+    "description": "Build context-aware pie menus from any Blender operator, property or macro",
+    "doc_url": "https://github.com/hinatahugu29/PieCreator",
+    "tracker_url": "https://github.com/hinatahugu29/PieCreator/issues",
     "category": "Interface",
 }
 

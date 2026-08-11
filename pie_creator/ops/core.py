@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 import bpy
 import mathutils
 import blf
@@ -5,7 +6,7 @@ from ..storage import (
     load_config, save_config, load_menus, sanitize_command, ensure_exec_context,
     format_arg,
 )
-from ..log import log_debug, log_error
+from ..log import log_debug, log_error, log_error_once, clear_error_once, ADDON_ID
 
 # --- HUD (通知) 表示用 ---
 hud_notifications = [] # (text, timestamp, x, y)
@@ -43,15 +44,17 @@ def draw_hud_callback(space_name):
             alive.append((text, ts, x, y))
         
         hud_notifications = alive
+        clear_error_once("hud_callback")
     except Exception as e:
-        log_error("HUD の描画に失敗した", e)
+        # 描画ハンドラなので毎フレーム通る。同じ失敗は一度だけ報告する。
+        log_error_once("hud_callback", "HUD の描画に失敗した", e)
 
 # --- 実行系ヘルパー ---
 
 def auto_invoke_enabled():
     """自動 INVOKE の安全弁。プリファレンスが読めない場面では ON とみなす。"""
     try:
-        addon = bpy.context.preferences.addons.get(__package__.split(".")[0])
+        addon = bpy.context.preferences.addons.get(ADDON_ID)
         if addon and addon.preferences:
             return bool(getattr(addon.preferences, "auto_invoke_context", True))
     except Exception:
@@ -243,6 +246,7 @@ def get_label_from_command(command):
 # --- 実行オペレーター ---
 
 class PIECREATOR_OT_Exec(bpy.types.Operator):
+    """Run the command stored in this menu item"""
     bl_idname = "wm.pie_creator_exec"
     bl_label = "Execute Command"
     command: bpy.props.StringProperty()
@@ -262,6 +266,7 @@ class PIECREATOR_OT_Exec(bpy.types.Operator):
         return self._run("Exec")
 
 class PIECREATOR_OT_CallMenu(bpy.types.Operator):
+    """Open the PieCreator menu with this identifier"""
     bl_idname = "wm.pie_creator_call"
     bl_label = "Call Pie Menu"
     menu_id: bpy.props.StringProperty()
@@ -285,6 +290,7 @@ class PIECREATOR_OT_CallMenu(bpy.types.Operator):
 
 stack_indices = {}
 class PIECREATOR_OT_CallStack(bpy.types.Operator):
+    """Run the next command in this stack menu, cycling through its items on each press"""
     bl_idname = "wm.pie_creator_stack"
     bl_label = "Call Stack Item"
     menu_id: bpy.props.StringProperty()
@@ -305,6 +311,7 @@ class PIECREATOR_OT_CallStack(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_StickyKey(bpy.types.Operator):
+    """Run one command while the key is held and another when it is released"""
     bl_idname = "wm.pie_creator_sticky"
     bl_label = "Sticky Key Action"
     bl_options = {'REGISTER', 'UNDO'}
@@ -329,6 +336,7 @@ class PIECREATOR_OT_StickyKey(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
 class PIECREATOR_OT_PopupDialog(bpy.types.Operator):
+    """Show this menu as a popup or as a dialog box"""
     bl_idname = "wm.pie_creator_popup"
     bl_label = "PieCreator Dialog"
     bl_options = {'REGISTER', 'UNDO'}
@@ -347,6 +355,7 @@ class PIECREATOR_OT_PopupDialog(bpy.types.Operator):
         return context.window_manager.invoke_popup(self)
 
 class PIECREATOR_OT_ReloadMenus(bpy.types.Operator):
+    """Reload the configuration and re-register every menu and shortcut"""
     bl_idname = "wm.pie_creator_reload"
     bl_label = "Reload & Sync"
     def execute(self, context):
@@ -355,6 +364,7 @@ class PIECREATOR_OT_ReloadMenus(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_CallMaster(bpy.types.Operator):
+    """Open the menu matching the current mode, falling back to the master menu"""
     bl_idname = "wm.pie_creator_call_master"
     bl_label = "Call Master Menu"
     def execute(self, context):

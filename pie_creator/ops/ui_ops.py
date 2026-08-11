@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 import bpy
 from ..storage import load_menus, save_menus, load_config, save_config, generate_unique_id
 from ..log import log_debug
@@ -10,6 +11,7 @@ from .core import get_label_from_command
 from ..ui import components
 
 class PIECREATOR_OT_ToggleCollapse(bpy.types.Operator):
+    """Collapse or expand this menu in the editor list"""
     bl_idname = "wm.pie_creator_toggle_collapse"
     bl_label = "Toggle Collapse"
     menu_id: bpy.props.StringProperty()
@@ -23,6 +25,7 @@ class PIECREATOR_OT_ToggleCollapse(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_CollapseAll(bpy.types.Operator):
+    """Collapse every menu in the editor list"""
     bl_idname = "wm.pie_creator_collapse_all"
     bl_label = "Collapse All"
     def execute(self, context):
@@ -32,6 +35,7 @@ class PIECREATOR_OT_CollapseAll(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_ExpandAll(bpy.types.Operator):
+    """Expand every menu in the editor list"""
     bl_idname = "wm.pie_creator_expand_all"
     bl_label = "Expand All"
     def execute(self, context):
@@ -39,6 +43,7 @@ class PIECREATOR_OT_ExpandAll(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_AddMenu(bpy.types.Operator):
+    """Create a new menu in the active deck"""
     bl_idname = "wm.pie_creator_add_menu"
     bl_label = "Add New Menu"
     type: bpy.props.EnumProperty(
@@ -66,6 +71,7 @@ class PIECREATOR_OT_AddMenu(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_RenameMenu(bpy.types.Operator):
+    """Change the display name and identifier of this menu"""
     bl_idname = "wm.pie_creator_rename_menu"
     bl_label = "Rename Menu"
     
@@ -130,6 +136,7 @@ class PIECREATOR_OT_RenameMenu(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_RemoveMenu(bpy.types.Operator):
+    """Delete this menu and its shortcut. Items pointing at it become broken links"""
     bl_idname = "wm.pie_creator_remove_menu"
     bl_label = "Remove Menu"
     menu_id: bpy.props.StringProperty()
@@ -154,6 +161,7 @@ class PIECREATOR_OT_RemoveMenu(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_AddItem(bpy.types.Operator):
+    """Edit this item: label, icon, command, poll condition and property binding"""
     bl_idname = "wm.pie_creator_add_item"
     bl_label = "Edit Item"
     menu_id: bpy.props.StringProperty()
@@ -234,6 +242,7 @@ class PIECREATOR_OT_AddItem(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_RemoveItem(bpy.types.Operator):
+    """Delete this item from the menu"""
     bl_idname = "wm.pie_creator_remove_item"
     bl_label = "Remove Item"
     menu_id: bpy.props.StringProperty()
@@ -249,6 +258,7 @@ class PIECREATOR_OT_RemoveItem(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_ManageModes(bpy.types.Operator):
+    """Choose which Blender modes this menu appears in. Leave empty to allow every mode"""
     bl_idname = "wm.pie_creator_manage_modes"
     bl_label = "Manage Modes"
     menu_id: bpy.props.StringProperty()
@@ -285,6 +295,7 @@ class PIECREATOR_OT_ManageModes(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_ManageAreas(bpy.types.Operator):
+    """Choose which editor types this menu appears in. Leave empty to allow every editor"""
     bl_idname = "wm.pie_creator_manage_areas"
     bl_label = "Manage Areas"
     menu_id: bpy.props.StringProperty()
@@ -316,6 +327,7 @@ class PIECREATOR_OT_ManageAreas(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_ToggleType(bpy.types.Operator):
+    """Change how this menu is presented: pie, popup, dialog, stack or sticky key"""
     bl_idname = "wm.pie_creator_toggle_type"
     bl_label = "Toggle Type"
     menu_id: bpy.props.StringProperty()
@@ -330,6 +342,7 @@ class PIECREATOR_OT_ToggleType(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_MoveMenu(bpy.types.Operator):
+    """Reorder this menu within the editor list"""
     bl_idname = "wm.pie_creator_move_menu"
     bl_label = "Move Menu"
     menu_id: bpy.props.StringProperty()
@@ -344,6 +357,7 @@ class PIECREATOR_OT_MoveMenu(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_MoveItem(bpy.types.Operator):
+    """Reorder this item within the menu"""
     bl_idname = "wm.pie_creator_move_item"
     bl_label = "Move Item"
     menu_id: bpy.props.StringProperty()
@@ -361,6 +375,7 @@ class PIECREATOR_OT_MoveItem(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_DuplicateMenu(bpy.types.Operator):
+    """Create a copy of this menu under a new identifier"""
     bl_idname = "wm.pie_creator_duplicate_menu"
     bl_label = "Duplicate Menu"
     menu_id: bpy.props.StringProperty()
@@ -377,6 +392,7 @@ class PIECREATOR_OT_DuplicateMenu(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_GuessLabel(bpy.types.Operator):
+    """Fill in the label from the operator named in the command"""
     bl_idname = "wm.pie_creator_guess_label"
     bl_label = "Guess Label"
     menu_id: bpy.props.StringProperty()
@@ -389,6 +405,7 @@ class PIECREATOR_OT_GuessLabel(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_SetMasterMenu(bpy.types.Operator):
+    """Use this menu as the fallback when no menu matches the current mode"""
     bl_idname = "wm.pie_creator_set_master_menu"
     bl_label = "Set as Master"
     menu_id: bpy.props.StringProperty()
@@ -398,6 +415,7 @@ class PIECREATOR_OT_SetMasterMenu(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_AddDeck(bpy.types.Operator):
+    """Create a new deck. Decks let you swap a whole set of menus at once"""
     bl_idname = "wm.pie_creator_add_deck"
     bl_label = "Add Deck"
     name: bpy.props.StringProperty(name="Deck Name", default="New Deck")
@@ -410,6 +428,7 @@ class PIECREATOR_OT_AddDeck(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_RemoveDeck(bpy.types.Operator):
+    """Delete this deck. Menus inside it move back to the default deck"""
     bl_idname = "wm.pie_creator_remove_deck"
     bl_label = "Remove Deck"
     deck_id: bpy.props.StringProperty()
@@ -423,6 +442,7 @@ class PIECREATOR_OT_RemoveDeck(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_SwitchDeck(bpy.types.Operator):
+    """Make this deck active, replacing the registered menus and shortcuts"""
     bl_idname = "wm.pie_creator_switch_deck"
     bl_label = "Switch Deck"
     deck_id: bpy.props.StringProperty()
@@ -431,6 +451,7 @@ class PIECREATOR_OT_SwitchDeck(bpy.types.Operator):
         save_config(config); bpy.ops.wm.pie_creator_reload(); return {'FINISHED'}
 
 class PIECREATOR_OT_MoveToDeck(bpy.types.Operator):
+    """Move this menu into another deck"""
     bl_idname = "wm.pie_creator_move_to_deck"
     bl_label = "Move to Deck"
     menu_id: bpy.props.StringProperty()
@@ -442,6 +463,7 @@ class PIECREATOR_OT_MoveToDeck(bpy.types.Operator):
         save_config(config); bpy.ops.wm.pie_creator_reload(); return {'FINISHED'}
 
 class PIECREATOR_OT_PrepareLink(bpy.types.Operator):
+    """Pick this menu as the child for the next link operation"""
     bl_idname = "wm.pie_creator_prepare_link"
     bl_label = "Prepare Link"
     menu_id: bpy.props.StringProperty()
@@ -451,6 +473,7 @@ class PIECREATOR_OT_PrepareLink(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_LinkToParent(bpy.types.Operator):
+    """Add this menu as a submenu entry of the chosen parent menu"""
     bl_idname = "wm.pie_creator_link_to_parent"
     bl_label = "Link to Parent"
     child_id: bpy.props.StringProperty()
@@ -468,6 +491,7 @@ class PIECREATOR_OT_LinkToParent(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_UnlinkFromParent(bpy.types.Operator):
+    """Remove this menu from its parent so it becomes a root menu again"""
     bl_idname = "wm.pie_creator_unlink_from_parent"
     bl_label = "Unlink from Parent"
     menu_id: bpy.props.StringProperty()
@@ -481,6 +505,7 @@ class PIECREATOR_OT_UnlinkFromParent(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_SelectMenu(bpy.types.Operator):
+    """Open this menu in the editor"""
     bl_idname = "wm.pie_creator_select_menu"
     bl_label = "Select Menu"
     menu_id: bpy.props.StringProperty()
@@ -489,6 +514,7 @@ class PIECREATOR_OT_SelectMenu(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_DuplicateItem(bpy.types.Operator):
+    """Create a copy of this item in the same menu"""
     bl_idname = "wm.pie_creator_duplicate_item"
     bl_label = "Duplicate Item"
     menu_id: bpy.props.StringProperty()
@@ -503,6 +529,7 @@ class PIECREATOR_OT_DuplicateItem(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_CopyItem(bpy.types.Operator):
+    """Copy this item to the PieCreator clipboard"""
     bl_idname = "wm.pie_creator_copy_item"
     bl_label = "Copy Item"
     menu_id: bpy.props.StringProperty(); item_index: bpy.props.IntProperty()
@@ -518,6 +545,7 @@ class PIECREATOR_OT_CopyItem(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_CutItem(bpy.types.Operator):
+    """Cut this item to the PieCreator clipboard"""
     bl_idname = "wm.pie_creator_cut_item"
     bl_label = "Cut Item"
     menu_id: bpy.props.StringProperty(); item_index: bpy.props.IntProperty()
@@ -533,6 +561,7 @@ class PIECREATOR_OT_CutItem(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_PasteItem(bpy.types.Operator):
+    """Paste the clipboard item into this menu"""
     bl_idname = "wm.pie_creator_paste_item"
     bl_label = "Paste Item"
     menu_id: bpy.props.StringProperty(); item_index: bpy.props.IntProperty(default=-1)
@@ -556,6 +585,7 @@ class PIECREATOR_OT_PasteItem(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_AddToMenu(bpy.types.Operator):
+    """Add the captured command to this menu"""
     bl_idname = "wm.pie_creator_add_to_menu"
     bl_label = "Add to Menu"
     menu_id: bpy.props.StringProperty()
@@ -574,6 +604,7 @@ class PIECREATOR_OT_AddToMenu(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_AddBufferedToMenu(bpy.types.Operator):
+    """Add the most recently captured command or property to this menu"""
     bl_idname = "wm.pie_creator_add_buffered_to_menu"
     bl_label = "Add Captured to Menu"
     menu_id: bpy.props.StringProperty()
@@ -594,6 +625,7 @@ class PIECREATOR_OT_AddBufferedToMenu(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_Paste(bpy.types.Operator):
+    """Paste the captured command into the menu as a new item"""
     bl_idname = "wm.pie_creator_paste"
     bl_label = "Paste Captured to Menu"
     menu_id: bpy.props.StringProperty()
@@ -613,6 +645,7 @@ class PIECREATOR_OT_Paste(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_CreateLinkSubmenu(bpy.types.Operator):
+    """Create a new menu and link it as a submenu of this one"""
     bl_idname = "wm.pie_creator_create_link_submenu"
     bl_label = "Create & Link Submenu"
     menu_id: bpy.props.StringProperty(); item_index: bpy.props.IntProperty()
@@ -629,6 +662,7 @@ class PIECREATOR_OT_CreateLinkSubmenu(bpy.types.Operator):
         save_config(config); bpy.ops.wm.pie_creator_reload(); return {'FINISHED'}
 
 class PIECREATOR_OT_ToggleMode(bpy.types.Operator):
+    """Turn this Blender mode on or off for the menu"""
     bl_idname = "wm.pie_creator_toggle_mode"
     bl_label = "Toggle Mode"
     menu_id: bpy.props.StringProperty(); mode: bpy.props.StringProperty()
@@ -642,6 +676,7 @@ class PIECREATOR_OT_ToggleMode(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_ToggleArea(bpy.types.Operator):
+    """Turn this editor type on or off for the menu"""
     bl_idname = "wm.pie_creator_toggle_area"
     bl_label = "Toggle Area"
     menu_id: bpy.props.StringProperty(); area: bpy.props.StringProperty()
@@ -655,6 +690,7 @@ class PIECREATOR_OT_ToggleArea(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_CatalogAdd(bpy.types.Operator):
+    """Add this operator from the catalog to the menu"""
     bl_idname = "wm.pie_creator_catalog_add"
     bl_label = "Add to Menu"
     menu_id: bpy.props.StringProperty()
@@ -670,6 +706,7 @@ class PIECREATOR_OT_CatalogAdd(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_ClearShortcut(bpy.types.Operator):
+    """Clear the keyboard shortcut assigned to this menu"""
     bl_idname = "wm.pie_creator_clear_shortcut"
     bl_label = "Clear Shortcut"
     menu_id: bpy.props.StringProperty()

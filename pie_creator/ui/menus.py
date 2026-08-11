@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 import bpy
 from ..storage import load_config, load_menus
 from ..log import log_debug

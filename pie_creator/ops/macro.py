@@ -1,8 +1,9 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 import bpy
 import time
 from bpy.app.handlers import persistent
 from ..storage import load_menus, save_menus
-from ..log import log_error
+from ..log import log_error, log_error_once, clear_error_once
 
 # --- バッファ ---
 macro_recording_buffer = []
@@ -24,14 +25,9 @@ def _macro_on_undo_redo(scene):
     except Exception as e:
         log_error("Undo/Redo 後の録画基準点の再同期に失敗した", e)
 
-# タイマーは 0.1 秒ごとに走るので、同じ失敗をそのまま出すとコンソールが
-# 埋まる。同一の失敗は最初の一度だけ報告する。
-_last_timer_error = None
-
-
 def macro_recorder_timer():
     """スナップショットベースの差分検出タイマー"""
-    global last_seen_op_id, macro_recording_buffer, _last_timer_error
+    global last_seen_op_id, macro_recording_buffer
     wm = bpy.context.window_manager
     if not wm.pie_creator_is_recording:
         return None
@@ -62,22 +58,21 @@ def macro_recorder_timer():
             show_hud(f"● REC [{len(macro_recording_buffer)}]: {new_ops[-1]['label']}")
         
         last_seen_op_id = current_last_id
-        _last_timer_error = None
+        clear_error_once("macro_timer")
     except Exception as e:
         # 黙って止まると「録画したのに何も入らない」という最悪の症状になる。
-        # 画面にも一度出して、失敗していることを利用者に伝える。
-        signature = f"{type(e).__name__}: {e}"
-        if signature != _last_timer_error:
-            _last_timer_error = signature
-            log_error("マクロ録画中の取り込みに失敗した", e)
+        # タイマーは 0.1 秒ごとに走るので、同じ失敗は一度だけ報告する。
+        if log_error_once("macro_timer", "マクロ録画中の取り込みに失敗した", e):
+            # 画面にも出して、失敗していることを利用者に伝える
             try:
                 from .core import show_hud
                 show_hud("REC: 取り込みに失敗しました（コンソールを確認）")
-            except Exception:
-                pass
+            except Exception as hud_error:
+                log_error("録画失敗の HUD 表示にも失敗した", hud_error)
     return 0.1
 
 class PIECREATOR_OT_MacroRecorder(bpy.types.Operator):
+    """Start or stop recording. Operators you use while recording are appended to the menu as items"""
     bl_idname = "wm.pie_creator_macro_recorder"
     bl_label = "Macro Recorder"
     menu_id: bpy.props.StringProperty()
@@ -118,6 +113,7 @@ class PIECREATOR_OT_MacroRecorder(bpy.types.Operator):
         return {'FINISHED'}
 
 class PIECREATOR_OT_Capture(bpy.types.Operator):
+    """Capture the operator you last used, so it can be added to a menu"""
     bl_idname = "wm.pie_creator_capture"
     bl_label = "Capture Active Command"
     def execute(self, context):
@@ -144,6 +140,7 @@ class PIECREATOR_OT_Capture(bpy.types.Operator):
         return {'CANCELLED'}
 
 class PIECREATOR_OT_CaptureProperty(bpy.types.Operator):
+    """Capture the property under the cursor, so it can be added to a menu as a slider or toggle"""
     bl_idname = "wm.pie_creator_capture_prop"
     bl_label = "Capture Property"
     def execute(self, context):
