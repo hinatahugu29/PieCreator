@@ -49,12 +49,12 @@ class PIECREATOR_OT_AddMenu(bpy.types.Operator):
     type: bpy.props.EnumProperty(
         name="Type",
         items=[
-            ('PIE',    "Pie Menu", "円形メニュー"), 
-            ('POPUP',  "Popup (Live)", "マウスを離すと消えるライブ型"),
-            ('DIALOG', "Dialog (OK)", "OKボタンで確定する居座り型"),
-            ('MENU',   "Menu (List)", "枠付きの垂直リストメニュー"),
-            ('STACK',  "Stack Key", "連打で切り替えるキー"), 
-            ('STICKY', "Sticky Key", "長押し・離しで動作するキー")
+            ('PIE',    "Pie Menu", "Radial menu around the cursor"), 
+            ('POPUP',  "Popup (Live)", "Live popup that closes when you release the mouse"),
+            ('DIALOG', "Dialog (OK)", "Dialog that stays open until you confirm it"),
+            ('MENU',   "Menu (List)", "Vertical list menu inside a box"),
+            ('STACK',  "Stack Key", "Key that steps through its items on each press"), 
+            ('STICKY', "Sticky Key", "Key that acts on press and again on release")
         ]
     )
     def execute(self, context):
@@ -92,7 +92,7 @@ class PIECREATOR_OT_RenameMenu(bpy.types.Operator):
         layout.prop(self, "new_id")
         layout.prop(self, "new_name")
         if self.new_id != self.menu_id:
-            layout.label(text="⚠ IDを変更すると全ての参照が更新されます", icon='ERROR')
+            layout.label(text="Changing the ID updates every reference to this menu", icon='ERROR')
 
     def execute(self, context):
         config = load_config()
@@ -101,11 +101,11 @@ class PIECREATOR_OT_RenameMenu(bpy.types.Operator):
         new_id = self.new_id
         
         if not new_id:
-            self.report({'ERROR'}, "IDを空にすることはできません")
+            self.report({'ERROR'}, "The ID cannot be empty")
             return {'CANCELLED'}
             
         if new_id != old_id and any(m["id"] == new_id for m in menus):
-            self.report({'ERROR'}, f"ID '{new_id}' は既に使用されています")
+            self.report({'ERROR'}, f"The ID '{new_id}' is already in use")
             return {'CANCELLED'}
 
         target_menu = next((m for m in menus if m["id"] == old_id), None)
@@ -228,7 +228,7 @@ class PIECREATOR_OT_AddItem(bpy.types.Operator):
         menu = next((m for m in menus if m["id"] == self.menu_id), None)
         if not menu: return {'CANCELLED'}
         if self.type == 'MENU' and self.target_menu_id == self.menu_id:
-            self.report({'ERROR'}, "自分自身をサブメニューにすることはできません"); return {'CANCELLED'}
+            self.report({'ERROR'}, "A menu cannot be its own submenu"); return {'CANCELLED'}
         
         new_item = {
             "type": self.type, "label": self.label, "icon": self.icon, "command": self.command, 
@@ -752,7 +752,7 @@ class PIECREATOR_OT_ClearShortcut(bpy.types.Operator):
                             found = True; break
                     except Exception as e:
                         # menu_id を持たないキーマップ項目が混ざり得る
-                        log_debug(f"キーマップ項目 {kmi.idname} を読めなかった: {type(e).__name__}: {e}")
+                        log_debug(f"Could not read keymap item {kmi.idname}: {type(e).__name__}: {e}")
                         continue
         
         # UI更新を強制

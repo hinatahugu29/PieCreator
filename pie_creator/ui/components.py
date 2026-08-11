@@ -332,7 +332,7 @@ def draw_menu_entry(layout, menu, all_menus, config, context, depth=0, drawn_ids
                     label = f"\u2192 {label} ({target_menu['name']})"
                 else:
                     row.label(text="", icon='ERROR')
-                    label = f"\u2192 {label} (Broken: {target_name})" if target_name else f"\u2192 {label} (未リンク)"
+                    label = f"\u2192 {label} (Broken: {target_name})" if target_name else f"\u2192 {label} (not linked)"
                     link_op = row.operator("wm.pie_creator_create_link_submenu", text="Create & Link", icon='ADD')
                     link_op.menu_id = menu_id; link_op.item_index = j
             elif item_type == 'SNAP_PANEL':

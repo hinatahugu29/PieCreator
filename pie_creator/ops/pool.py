@@ -45,8 +45,8 @@ class PIECREATOR_OT_CaptureValueAsCommand(bpy.types.Operator):
                 context.window_manager.clipboard = cmd
                 return {'FINISHED'}
             except Exception as e:
-                log_error(f"現在値の取り込みに失敗した: {path}.{prop}", e)
-                self.report({'ERROR'}, f"値を取り込めません: {type(e).__name__}: {e}")
+                log_error(f"Failed to capture the current value: {path}.{prop}", e)
+                self.report({'ERROR'}, f"Could not capture the value: {type(e).__name__}: {e}")
         return {'CANCELLED'}
 
 class PIECREATOR_OT_MovePoolItem(bpy.types.Operator):

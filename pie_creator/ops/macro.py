@@ -23,7 +23,7 @@ def _macro_on_undo_redo(scene):
         if macro_recording_buffer:
             macro_recording_buffer.pop()
     except Exception as e:
-        log_error("Undo/Redo 後の録画基準点の再同期に失敗した", e)
+        log_error("Failed to resync the recording baseline after undo/redo", e)
 
 def macro_recorder_timer():
     """スナップショットベースの差分検出タイマー"""
@@ -62,13 +62,13 @@ def macro_recorder_timer():
     except Exception as e:
         # 黙って止まると「録画したのに何も入らない」という最悪の症状になる。
         # タイマーは 0.1 秒ごとに走るので、同じ失敗は一度だけ報告する。
-        if log_error_once("macro_timer", "マクロ録画中の取り込みに失敗した", e):
+        if log_error_once("macro_timer", "Failed to capture an operator while recording", e):
             # 画面にも出して、失敗していることを利用者に伝える
             try:
                 from .core import show_hud
-                show_hud("REC: 取り込みに失敗しました（コンソールを確認）")
+                show_hud("REC: capture failed (see the console)")
             except Exception as hud_error:
-                log_error("録画失敗の HUD 表示にも失敗した", hud_error)
+                log_error("Could not show the recording failure on the HUD either", hud_error)
     return 0.1
 
 class PIECREATOR_OT_MacroRecorder(bpy.types.Operator):

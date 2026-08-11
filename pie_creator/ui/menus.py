@@ -41,7 +41,7 @@ def draw_menu_items(layout, items, context, is_pie=False):
                 allowed = eval(_compile_expr(poll_str), {"bpy": bpy, "context": context, "C": context, "D": bpy.data})
                 if not allowed: continue
             except Exception as e:
-                log_debug(f"poll の評価に失敗した ({label}): {poll_str}: {type(e).__name__}: {e}")
+                log_debug(f"Poll expression failed ({label}): {poll_str}: {type(e).__name__}: {e}")
                 layout.label(text=f"(Poll Error: {label})", icon='ERROR')
                 continue
         
@@ -59,7 +59,7 @@ def draw_menu_items(layout, items, context, is_pie=False):
                     layout.prop(data, prop, text=label if label else "", icon=icon if icon != 'NONE' else 'BLANK1', slider=use_slider, expand=expand)
                 except Exception as e:
                     # 描画のたびに通るので詳細ログ扱い。失敗は画面のラベルで伝わる。
-                    log_debug(f"プロパティを描画できなかった: path={path!r}, prop={prop!r}: {type(e).__name__}: {e}")
+                    log_debug(f"Could not draw the property: path={path!r}, prop={prop!r}: {type(e).__name__}: {e}")
                     layout.label(text=f"(Prop Error: {prop} - {type(e).__name__})", icon='ERROR')
             continue
         elif item_type == "SNAP_PANEL":

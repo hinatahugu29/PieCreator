@@ -47,7 +47,7 @@ def draw_hud_callback(space_name):
         clear_error_once("hud_callback")
     except Exception as e:
         # 描画ハンドラなので毎フレーム通る。同じ失敗は一度だけ報告する。
-        log_error_once("hud_callback", "HUD の描画に失敗した", e)
+        log_error_once("hud_callback", "Failed to draw the HUD", e)
 
 # --- 実行系ヘルパー ---
 
@@ -86,7 +86,7 @@ def execute_pie_command(command, label="Command"):
         return True, ""
     except Exception as e:
         message = f"{label}: {type(e).__name__}: {e}"
-        log_error(f"コマンドの実行に失敗した\n  command: {cmd}\n  {message}")
+        log_error(f"Command failed\n  command: {cmd}\n  {message}")
         return False, message
 
 def get_op_command(op):
@@ -131,11 +131,11 @@ def get_op_command(op):
             command = ensure_exec_context(command)
         return command
     except Exception as e:
-        log_error("オペレーターからコマンド文字列を組み立てられなかった", e)
+        log_error("Could not build a command string from the operator", e)
         return ""
 
 def get_op_label(op):
-    if not op: return "未知の物"
+    if not op: return "Unknown"
     
     # 1. 属性から直接取得を試みる
     idname = getattr(op, "bl_idname", None)
@@ -176,9 +176,9 @@ def get_op_label(op):
         # 5. 最終手段として ID 名をそのまま使う
         if idname: return idname
     except Exception as e:
-        log_debug(f"ラベルの解決に失敗した (idname={idname}): {type(e).__name__}: {e}")
+        log_debug(f"Could not resolve a label (idname={idname}): {type(e).__name__}: {e}")
 
-    return label if label else "未知の物"
+    return label if label else "Unknown"
 
 def get_prop_info(context):
     if not hasattr(context, "button_prop") or not context.button_prop: return None, None, None
@@ -218,7 +218,7 @@ def get_prop_info(context):
             full_path = f"{base}.{path}" if path else base
             return full_path, prop.identifier, prop.name
     except Exception as e:
-        log_error("プロパティのデータパスを解決できなかった", e)
+        log_error("Could not resolve the property data path", e)
     return None, None, None
 
 def get_label_from_command(command):
@@ -240,8 +240,8 @@ def get_label_from_command(command):
                 # RNAがダメなら名前を整形 (primitive_cube_add -> Primitive Cube Add)
                 return name.replace("_", " ").title()
         except Exception as e:
-            log_debug(f"コマンド文字列からラベルを引けなかった ({command}): {type(e).__name__}: {e}")
-    return "未知の物"
+            log_debug(f"Could not derive a label from the command ({command}): {type(e).__name__}: {e}")
+    return "Unknown"
 
 # --- 実行オペレーター ---
 
@@ -382,11 +382,11 @@ class PIECREATOR_OT_CallMaster(bpy.types.Operator):
             modes = m.get("modes", [])
 
             if m_deck != active_deck:
-                log_debug(f"  skip {m_id}: デッキ不一致 ({m_deck} != {active_deck})")
+                log_debug(f"  skip {m_id}: deck mismatch ({m_deck} != {active_deck})")
                 continue
 
             if curr_mode in modes:
-                log_debug(f"  match {m_id}: モード {curr_mode}")
+                log_debug(f"  match {m_id}: mode {curr_mode}")
                 bpy.ops.wm.pie_creator_call(menu_id=m_id)
                 return {'FINISHED'}
 
@@ -395,15 +395,15 @@ class PIECREATOR_OT_CallMaster(bpy.types.Operator):
         if m_id:
             # メニューが存在するか最終確認
             if any(m["id"] == m_id for m in menus):
-                log_debug(f"  マスターメニューを使う: {m_id}")
+                log_debug(f"  using the master menu: {m_id}")
                 bpy.ops.wm.pie_creator_call(menu_id=m_id)
             elif menus:
-                log_debug(f"  マスターメニュー {m_id} が見つからない。{menus[0]['id']} で代替する")
+                log_debug(f"  master menu {m_id} not found; falling back to {menus[0]['id']}")
                 bpy.ops.wm.pie_creator_call(menu_id=menus[0]["id"])
             else:
-                self.report({'WARNING'}, "呼び出せるメニューがありません")
+                self.report({'WARNING'}, "No menu is available to open")
         else:
-            self.report({'WARNING'}, "現在のモードに一致するメニューがなく、マスターメニューも未設定です")
+            self.report({'WARNING'}, "No menu matches the current mode, and no master menu is set")
         return {'FINISHED'}
 
 classes = (

@@ -8,10 +8,10 @@ from ..log import log_debug
 
 HANDBOOK_TEMPLATE = """
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>PieCreator Full Menu Handbook V10</title>
+    <title>PieCreator Menu Handbook</title>
     <style>
         :root { --bg: #111; --card: #222; --text: #eee; --accent: #00aaff; --border: #333; --tag-orphan: #ff8800; --tag-tree: #00cc66; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; }
@@ -49,7 +49,7 @@ HANDBOOK_TEMPLATE = """
 <body>
     <div class="header">
         <h1>
-            PieCreator Full Handbook V10
+            PieCreator Menu Handbook
             <span class="stats" id="stats">Scanning...</span>
         </h1>
         <div class="search-container">
@@ -176,7 +176,7 @@ def generate_handbook(context):
         except Exception as e:
             # 描画に失敗したメニューはハンドブックから落とす。全メニュー走査なので
             # 数件は必ず出る。通常運用では見せず、詳細ログのときだけ出す。
-            log_debug(f"ハンドブック生成で {menu_id} を除外した: {type(e).__name__}: {e}")
+            log_debug(f"Excluded {menu_id} while generating the handbook: {type(e).__name__}: {e}")
             return
         
         items = []

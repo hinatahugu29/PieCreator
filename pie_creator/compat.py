@@ -32,11 +32,11 @@ def safe_draw_text(font_id, text, x, y, size=20, color=(1.0, 0.8, 0.2, 1.0)):
             blf.shadow(font_id, 3, 0.0, 0.0, 0.0, color[3])
             blf.shadow_offset(font_id, 2, -2)
         except Exception as e:
-            log_error_once("hud_shadow", "HUD テキストの影付けに失敗した（描画は続行）", e)
+            log_error_once("hud_shadow", "Could not apply the HUD text shadow; drawing continues", e)
 
         blf.color(font_id, color[0], color[1], color[2], color[3])
         blf.position(font_id, x, y, 0)
         blf.draw(font_id, text)
         clear_error_once("hud_draw")
     except Exception as e:
-        log_error_once("hud_draw", "テキストの描画に失敗した", e)
+        log_error_once("hud_draw", "Failed to draw text", e)

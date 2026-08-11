@@ -21,7 +21,7 @@ def register():
                 bpy.utils.unregister_class(getattr(bpy.types, cls.__name__))
             bpy.utils.register_class(cls)
         except Exception as e:
-            log_error(f"UI クラス {cls.__name__} の登録に失敗した", e)
+            log_error(f"Failed to register UI class {cls.__name__}", e)
 
 def unregister():
     for cls in reversed(classes):
@@ -29,4 +29,4 @@ def unregister():
             bpy.utils.unregister_class(cls)
         except Exception as e:
             # 未登録のクラスを外そうとするのは想定内
-            log_debug(f"UI クラス {cls.__name__} の解除をスキップした: {type(e).__name__}: {e}")
+            log_debug(f"Skipped unregistering UI class {cls.__name__}: {type(e).__name__}: {e}")

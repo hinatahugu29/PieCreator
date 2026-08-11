@@ -21,7 +21,7 @@ def get_config_path():
         try:
             shutil.move(old_path, new_path)
         except Exception as e:
-            log_error(f"設定ファイルの移行に失敗した: {old_path} -> {new_path}", e)
+            log_error(f"Failed to migrate the configuration file: {old_path} -> {new_path}", e)
 
     return new_path
 
@@ -40,7 +40,7 @@ def backup_config():
         shutil.copy2(path, backup_path)
         return backup_path
     except Exception as e:
-        log_error(f"設定のバックアップに失敗した: {backup_path}", e)
+        log_error(f"Failed to back up the configuration: {backup_path}", e)
         return None
 
 
@@ -158,7 +158,7 @@ def load_config():
 
             return data
     except Exception as e:
-        log_error(f"設定の読み込みに失敗した: {path}", e)
+        log_error(f"Failed to load the configuration: {path}", e)
         return {
             "active_deck": "default", 
             "decks": [{"id": "default", "name": "Default Deck"}], 
@@ -201,7 +201,7 @@ def save_config(data):
         sync_shortcuts_to_config(data)
     except Exception as e:
         # ショートカットの取り込みに失敗しても設定本体は保存する。
-        log_error("ショートカットの同期に失敗した（設定の保存は続行する）", e)
+        log_error("Failed to sync shortcuts; saving the configuration anyway", e)
 
     path = get_config_path()
     with open(path, 'w', encoding='utf-8') as f:

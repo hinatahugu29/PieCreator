@@ -43,7 +43,7 @@ class PIECREATOR_OT_OpenDesigner(bpy.types.Operator):
                 except Exception as e:
                     # bpy.ops 全走査なので RNA を引けないものが数件は出る。
                     # 通常運用では見せず、詳細ログのときだけ出す。
-                    log_debug(f"カタログ走査で {attr}.{op_name} を除外した: {type(e).__name__}: {e}")
+                    log_debug(f"Excluded {attr}.{op_name} while scanning the catalog: {type(e).__name__}: {e}")
                     continue
             if module_ops:
                 catalog["modules"][attr] = module_ops
@@ -83,8 +83,8 @@ class PIECREATOR_OT_PasteDesignerData(bpy.types.Operator):
 
     import_mode: bpy.props.EnumProperty(
         items=[
-            ('APPEND', "Append New", "既存のメニューを残し、新しいものだけ追加します"),
-            ('OVERWRITE', "Overwrite All", "現在の設定を全て消去し、コピーした内容で上書きします")
+            ('APPEND', "Append New", "Keep the existing menus and add only the new ones"),
+            ('OVERWRITE', "Overwrite All", "Erase the current configuration and replace it with the copied one")
         ],
         name="Import Mode",
         default='APPEND'
@@ -98,8 +98,8 @@ class PIECREATOR_OT_PasteDesignerData(bpy.types.Operator):
         try:
             data = json.loads(clipboard)
         except Exception as e:
-            log_error("クリップボードの内容を JSON として読めなかった", e)
-            self.report({'ERROR'}, f"クリップボードが JSON ではありません: {type(e).__name__}: {e}")
+            log_error("Could not parse the clipboard contents as JSON", e)
+            self.report({'ERROR'}, f"The clipboard does not contain valid JSON: {type(e).__name__}: {e}")
             return {'CANCELLED'}
         if not isinstance(data, dict) or "type" not in data:
             self.report({'ERROR'}, "Unknown format. Please copy from PieDesigner.")
@@ -122,9 +122,9 @@ class PIECREATOR_OT_PasteDesignerData(bpy.types.Operator):
                 backup_path = backup_config()
                 config["menus"] = new_menus
                 if backup_path:
-                    self.report({'INFO'}, f"{len(new_menus)} メニューで上書きしました。以前の設定: {backup_path}")
+                    self.report({'INFO'}, f"Overwritten with {len(new_menus)} menus. Previous configuration: {backup_path}")
                 else:
-                    self.report({'INFO'}, f"{len(new_menus)} メニューで上書きしました")
+                    self.report({'INFO'}, f"Overwritten with {len(new_menus)} menus")
             else:
                 for nm in new_menus:
                     nm["id"] = generate_unique_id(nm["id"], existing_menus)
@@ -144,7 +144,7 @@ class PIECREATOR_OT_PasteDesignerData(bpy.types.Operator):
         except Exception as e:
             # ここは「確認ダイアログを出すべきか」の判定でしかない。読めなければ
             # execute 側が改めて検証してエラーを報告する。
-            log_debug(f"貼り付け内容の事前判定に失敗した: {type(e).__name__}: {e}")
+            log_debug(f"Could not pre-check the pasted content: {type(e).__name__}: {e}")
         return self.execute(context)
 
 class PIECREATOR_OT_CopyDesignerData(bpy.types.Operator):

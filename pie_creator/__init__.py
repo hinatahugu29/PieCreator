@@ -37,7 +37,7 @@ def unregister_dynamic_menus():
         try:
             bpy.utils.unregister_class(cls)
         except Exception as e:
-            log_debug(f"動的メニュー {cls.__name__} の解除をスキップした: {type(e).__name__}: {e}")
+            log_debug(f"Skipped unregistering dynamic menu {cls.__name__}: {type(e).__name__}: {e}")
     dynamic_classes.clear()
     
     # 静的メニュー以外を掃除
@@ -56,7 +56,7 @@ def unregister_dynamic_menus():
             try:
                 bpy.utils.unregister_class(cls)
             except Exception as e:
-                log_debug(f"残存メニュー {attr} の解除をスキップした: {type(e).__name__}: {e}")
+                log_debug(f"Skipped unregistering leftover menu {attr}: {type(e).__name__}: {e}")
 
 def register_dynamic_menus():
     global dynamic_classes
@@ -68,7 +68,7 @@ def register_dynamic_menus():
     active_deck_id = config.get("active_deck", "default")
     menu_data = config.get("menus", [])
     
-    log_debug(f"メニュー登録開始 (Deck: {active_deck_id}, Menus: {len(menu_data)})")
+    log_debug(f"Registering menus (deck: {active_deck_id}, count: {len(menu_data)})")
 
     wm = bpy.context.window_manager
     wm.pie_creator_menus_search.clear()
@@ -94,7 +94,7 @@ def register_dynamic_menus():
             try:
                 bpy.utils.unregister_class(old_cls)
             except Exception as e:
-                log_debug(f"PIECREATOR_MT_{m_id} の再登録前の解除に失敗した: {type(e).__name__}: {e}")
+                log_debug(f"Could not unregister PIECREATOR_MT_{m_id} before re-registering: {type(e).__name__}: {e}")
             
         try:
             bpy.utils.register_class(cls)
@@ -111,9 +111,9 @@ def register_dynamic_menus():
 
         except Exception as e:
             # 登録に失敗したメニューは呼び出しても出てこない。常に報告する。
-            log_error(f"メニューの登録に失敗した: {status_str}", e)
+            log_error(f"Failed to register menu: {status_str}", e)
 
-    log_debug("メニュー登録完了")
+    log_debug("Menu registration finished")
 
     active_menu_ids = []
     for m in menu_data:
@@ -288,7 +288,7 @@ def update_catalog_search(wm, context):
     
     # キャッシュが空なら構築
     if not _operator_catalog_cache:
-        log_debug("オペレーターカタログを構築中...")
+        log_debug("Building the operator catalog...")
         for module_name in dir(bpy.ops):
             if module_name.startswith("_"): continue
             module = getattr(bpy.ops, module_name)
@@ -300,9 +300,9 @@ def update_catalog_search(wm, context):
                     _operator_catalog_cache.append((op_rna.name, idname, op_rna.description))
                 except Exception as e:
                     # bpy.ops 全走査なので RNA を引けないものが数件は出る
-                    log_debug(f"カタログから {idname} を除外した: {type(e).__name__}: {e}")
+                    log_debug(f"Excluded {idname} from the catalog: {type(e).__name__}: {e}")
                     continue
-        log_debug(f"オペレーターカタログを構築した: {len(_operator_catalog_cache)} 件")
+        log_debug(f"Operator catalog built: {len(_operator_catalog_cache)} entries")
 
     count = 0
     # キャッシュから検索（爆速）
@@ -336,7 +336,7 @@ def register():
             try:
                 delattr(wm_type, p)
             except Exception as e:
-                log_debug(f"既存プロパティ {p} の削除をスキップした: {type(e).__name__}: {e}")
+                log_debug(f"Skipped removing existing property {p}: {type(e).__name__}: {e}")
 
     from .ops.io import PIECREATOR_ScrapedItem
     
@@ -388,26 +388,26 @@ def register():
             icon_items = bpy.types.UILayout.bl_rna.functions['prop'].parameters['icon'].enum_items.keys()
         except Exception as standard_error:
             # フォールバック: 低レベル _bpy (Blender バージョンにより構造が異なる可能性がある)
-            log_debug(f"標準 API でのアイコン列挙に失敗した: {type(standard_error).__name__}: {standard_error}")
+            log_debug(f"Could not enumerate icons through the standard API: {type(standard_error).__name__}: {standard_error}")
             try:
                 import _bpy
                 icon_items = _bpy.types.UILayout.bl_rna.functions['prop'].parameters['icon'].enum_items.keys()
             except Exception as fallback_error:
                 # アイコン検索欄が空になるので、理由は残す
-                log_error("アイコン一覧を取得できなかった（アイコン検索は使えない）", fallback_error)
+                log_error("Could not read the icon list; icon search will be unavailable", fallback_error)
         
         if icon_items:
             for icon in sorted(icon_items):
                 wm.pie_creator_icons_search.add().name = icon
     except Exception as e:
-        log_error("アイコン検索リストの初期化に失敗した（アイコン検索は使えない）", e)
+        log_error("Failed to initialize the icon search list; icon search will be unavailable", e)
 
     # 2. Blender 標準メニューの検索用リスト初期化
     try:
         from .ops.io import init_blender_menus
         init_blender_menus(wm)
     except Exception as e:
-        log_error("メニュー検索リストの初期化に失敗した（Scraper の候補が出ない）", e)
+        log_error("Failed to initialize the menu search list; the scraper will have no suggestions", e)
 
     bpy.types.UI_MT_button_context_menu.append(draw_context_menu)
     setup_master_keymap()
