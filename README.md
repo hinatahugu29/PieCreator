@@ -22,6 +22,8 @@ blender --command extension build --source-dir pie_creator
 
 有効化すると `Preferences > Add-ons > PieCreator` に設定 UI が出る。
 
+使い方は [docs/user-guide.md](docs/user-guide.md)（英語）を参照。
+
 ### メタデータは二重に持っている
 
 | ファイル | 使われる場面 |
@@ -41,7 +43,8 @@ blender --command extension build --source-dir pie_creator
 | `pie_creator/ui/` | プリファレンス UI とメニュー定義 |
 | `pie_creator/designer/` | 外部メニューエディタ（HTML/JS の PieDesigner） |
 | `pie_creator/tools/` | ハンドブック生成などの補助ツール |
-| `docs/` | 設計メモ・マニュアル・ロードマップ |
+| `docs/user-guide.md` | **利用者向けマニュアル（英語・配布物に添える想定）** |
+| `docs/` | 設計メモ・旧マニュアル・ロードマップ（開発者向け） |
 | `docs/html/` | 生成済み HTML（マニュアル、ハンドブック、ロゴアニメ、プロトタイプ） |
 | `data/` | 生成データ（Blender API カタログ、メニュー階層 JSON） |
 | `tests/` | Blender 上で走らせる検証スクリプト |

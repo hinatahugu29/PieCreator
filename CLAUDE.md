@@ -27,6 +27,13 @@ Superhive での有償配布を視野に入れている。以下は「動けば�
 - **バージョンと対応 Blender は 2 箇所ある。** `blender_manifest.toml` と
   `bl_info` の両方を揃えて直す
 - 対応下限は **Blender 4.2 LTS**。それ未満のための分岐は書かない
+- **実行時に出る文字列は英語で書く。** `self.report`、`layout.label`、
+  `log_debug` / `log_error` のすべて。サポート時にコンソールログをそのまま
+  共有できるようにするため、内部ログも英語に揃えている。綴りは Blender の
+  慣例に合わせて米国式（`analyze`, `initialize`, `behavior`）
+- コード中の**コメントは日本語のまま**でよい。読み手が本人なので
+- 機能を足したら [docs/user-guide.md](docs/user-guide.md) も直す。
+  これは購入者に渡すマニュアル
 
 ## 編集する場所
 
