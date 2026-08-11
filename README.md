@@ -3,15 +3,34 @@
 Blender 用のパイメニュー作成アドオン。任意の Blender オペレーターやマクロを、
 コンテキストに応じて切り替わる階層型パイメニューとして組み立てられる。
 
-- **Blender**: 5.0 以降
+- **Blender**: 4.2 LTS 以降
 - **バージョン**: 11.0.0
 - **作者**: hinata_hugu
+- **ライセンス**: GPL-3.0-or-later（[LICENSE](LICENSE)）
 
 ## インストール
 
-1. `pie_creator/` フォルダを zip に固める
-2. Blender の `Edit > Preferences > Add-ons > Install...` でその zip を指定
-3. 有効化すると `Preferences > Add-ons > PieCreator V11` に設定 UI が出る
+Blender 4.2 以降は Extensions 形式を推奨する:
+
+```
+blender --command extension build --source-dir pie_creator
+```
+
+生成された zip を `Edit > Preferences > Get Extensions > Install from Disk`
+で読み込む。旧来のアドオン形式で入れる場合は `pie_creator/` を zip に固めて
+`Add-ons > Install from Disk` を使う。
+
+有効化すると `Preferences > Add-ons > PieCreator` に設定 UI が出る。
+
+### メタデータは二重に持っている
+
+| ファイル | 使われる場面 |
+|---|---|
+| `pie_creator/blender_manifest.toml` | Extensions 形式（Blender 4.2 以降） |
+| `pie_creator/__init__.py` の `bl_info` | 旧来のアドオン形式 |
+
+**バージョンと対応 Blender を上げるときは必ず両方直す。** 片方だけだと
+配布形式によって表示が食い違う。
 
 ## リポジトリ構成
 
@@ -27,6 +46,7 @@ Blender 用のパイメニュー作成アドオン。任意の Blender オペレ
 | `data/` | 生成データ（Blender API カタログ、メニュー階層 JSON） |
 | `tests/` | Blender 上で走らせる検証スクリプト |
 | `scratch/` | 使い捨ての調査スクリプトと作業ログ。参照専用 |
+| `LICENSE` | GPL-3.0 全文 |
 
 `data/blender_catalog.json` はアドオンからは読まれない。PieDesigner の
 「Load Catalog」で読み込む用の書き出し済みデータで、アドオン側は実行時に
@@ -63,3 +83,9 @@ python -m unittest discover -s tests
 旧世代のコードは Git 履歴とローカルの zip に残っている。
 
 作業ルールは [CLAUDE.md](CLAUDE.md) を参照。
+
+## ライセンス
+
+GPL-3.0-or-later。`bpy` を import する Blender アドオンは Blender の派生物
+として扱われるため、GPL 系での配布になる。有償販売は GPL のもとで問題なく
+行える（Superhive / Blender Market の大半がこの形）。

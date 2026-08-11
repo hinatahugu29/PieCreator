@@ -13,6 +13,21 @@ Blender アドオン「PieCreator」。アドオン本体は `pie_creator/` の�
 コミットする。世代の区切りは Git のタグ（`v11.0.0` 形式）で表す。
 かつてフォルダで世代管理していた名残が Git 履歴にあるが、その方式には戻さない。
 
+## 商用配布を前提にする
+
+Superhive での有償配布を視野に入れている。以下は「動けばいい」で崩さない。
+
+- **ライセンスは GPL-3.0-or-later。** 新しい .py には
+  `# SPDX-License-Identifier: GPL-3.0-or-later` を先頭に付ける
+- **オペレーターには必ず docstring を書く。** Blender はこれをツールチップに
+  使う。無いと有償アドオンで "Undocumented" と表示される
+- **addon ID は `log.ADDON_ID` を使う。** `__package__.split(".")[0]` と
+  書かない。Extensions 形式では `bl_ext.<repo>.pie_creator` になるため
+  先頭要素は `bl_ext` になり、プリファレンスが黙って既定値に落ちる
+- **バージョンと対応 Blender は 2 箇所ある。** `blender_manifest.toml` と
+  `bl_info` の両方を揃えて直す
+- 対応下限は **Blender 4.2 LTS**。それ未満のための分岐は書かない
+
 ## 編集する場所
 
 | やりたいこと | 触るファイル |
