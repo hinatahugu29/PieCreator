@@ -9,6 +9,12 @@ __pycache__/
 *.blend1
 *.blend2
 
+# ops/designer.py が実行時に生成するカタログ。生成物なので追跡しない。
+pie_creator/designer/blender_catalog.js
+
+# エディタ
+.vscode/
+
 # OS
 Thumbs.db
 .DS_Store
