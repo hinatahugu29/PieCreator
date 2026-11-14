@@ -6,7 +6,7 @@
 bl_info = {
     "name": "PieCreator",
     "author": "hinata_hugu",
-    "version": (11, 0, 0),
+    "version": (11, 0, 1),
     "blender": (4, 2, 0),
     "location": "Preferences > Add-ons > PieCreator",
     "description": "Build context-aware pie menus from any Blender operator, property or macro",

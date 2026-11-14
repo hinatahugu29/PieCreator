@@ -3,7 +3,7 @@ schema_version = "1.0.0"
 id = "pie_creator"
 name = "PieCreator"
 tagline = "Build context-aware pie menus from any operator, property or macro"
-version = "11.0.0"
+version = "11.0.1"
 type = "add-on"
 
 maintainer = "hinata_hugu <hinata.hugu29@gmail.com>"
