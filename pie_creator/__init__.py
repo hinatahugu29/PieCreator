@@ -29,7 +29,6 @@ if "storage" in locals():
     importlib.reload(ui)
 
 dynamic_classes = []
-addon_keymaps = []
 
 def unregister_dynamic_menus():
     global dynamic_classes
@@ -327,6 +326,9 @@ def update_catalog_search(wm, context):
             if count >= 30: break
 
 def register():
+    # 古い世代のコピーが有効なままだと、同じ idname のキーマップ項目が
+    # 残っている。そのまま setup_keymap_item が読むと落ちるので先に外す。
+    remove_addon_keymap_items()
     ops.register()
     ui.register()
 
@@ -428,6 +430,33 @@ def register():
     if not bpy.app.timers.is_registered(catalog_search_timer):
         bpy.app.timers.register(catalog_search_timer)
 
+def remove_addon_keymap_items():
+    """このアドオンが addon キーコンフィグに作ったキーマップ項目を外す。
+
+    無効化のときに残すと、オペレーターのクラスは未登録なのにキーマップ項目
+    だけが居座る。再度有効化したときに `setup_keymap_item` が
+    `kmi.properties` を読んで未登録の型を触り、Blender 5.x では
+    EXCEPTION_ACCESS_VIOLATION で Blender ごと落ちる (4.2 では耐えていた)。
+    ショートカットは設定ファイル側に持っているので、有効化で作り直される。
+    """
+    wm = bpy.context.window_manager
+    kc = wm.keyconfigs.addon
+    if not kc:
+        return
+    km = kc.keymaps.get("Window")
+    if not km:
+        return
+    targets = {
+        "wm.pie_creator_call", "wm.pie_creator_stack", "wm.pie_creator_sticky",
+        "wm.pie_creator_popup", "wm.pie_creator_call_master",
+    }
+    for kmi in [k for k in km.keymap_items if k.idname in targets]:
+        try:
+            km.keymap_items.remove(kmi)
+        except Exception as e:
+            log_debug(f"Could not remove keymap item {kmi.idname}: {type(e).__name__}: {e}")
+
+
 def unregister():
     if bpy.app.timers.is_registered(catalog_search_timer):
         bpy.app.timers.unregister(catalog_search_timer)
@@ -443,6 +472,7 @@ def unregister():
     bpy.utils.unregister_class(PIECREATOR_CatalogItem)
     bpy.utils.unregister_class(PIECREATOR_NameItem)
     unregister_dynamic_menus()
+    remove_addon_keymap_items()
 
 if __name__ == "__main__":
     register()
