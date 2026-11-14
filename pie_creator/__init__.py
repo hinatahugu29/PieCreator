@@ -255,6 +255,17 @@ def draw_context_menu(self, context):
             layout.menu("PIECREATOR_MT_ContextMenuAddList", text="Add to:", icon='ADD')
     except Exception as e: print(f"PieCreator: Context menu error: {e}")
 
+class PIECREATOR_NameItem(bpy.types.PropertyGroup):
+    """prop_search 用の名前だけを持つ項目。
+
+    素の `bpy.types.PropertyGroup` を CollectionProperty の型にすると、
+    Blender 5.3 以降は `name` が読み取り専用になり代入で例外が出る
+    (5.1 までは書き込めた)。prop_search は `name` を検索キーにするので、
+    識別子は `name` のまま自前で宣言したものを使う。
+    """
+    name: bpy.props.StringProperty()
+
+
 class PIECREATOR_CatalogItem(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty()
     idname: bpy.props.StringProperty()
@@ -340,11 +351,12 @@ def register():
 
     from .ops.io import PIECREATOR_ScrapedItem
     
+    bpy.utils.register_class(PIECREATOR_NameItem)
     bpy.utils.register_class(PIECREATOR_CatalogItem)
     wm_type.pie_creator_catalog_results = bpy.props.CollectionProperty(type=PIECREATOR_CatalogItem)
     
-    wm_type.pie_creator_menus_search = bpy.props.CollectionProperty(type=bpy.types.PropertyGroup)
-    wm_type.pie_creator_icons_search = bpy.props.CollectionProperty(type=bpy.types.PropertyGroup)
+    wm_type.pie_creator_menus_search = bpy.props.CollectionProperty(type=PIECREATOR_NameItem)
+    wm_type.pie_creator_icons_search = bpy.props.CollectionProperty(type=PIECREATOR_NameItem)
     wm_type.pie_creator_moving_menu_id = bpy.props.StringProperty()
     wm_type.pie_creator_linking_child_id = bpy.props.StringProperty()
     wm_type.pie_creator_active_menu_id = bpy.props.StringProperty()
@@ -373,7 +385,7 @@ def register():
     wm_type.pie_creator_scraped_items = bpy.props.CollectionProperty(type=PIECREATOR_ScrapedItem)
     wm_type.pie_creator_is_scraping = bpy.props.BoolProperty(default=False)
     wm_type.pie_creator_scrape_menu_id = bpy.props.StringProperty(name="Menu ID", default="VIEW3D_MT_mesh_add")
-    wm_type.pie_creator_blender_menus = bpy.props.CollectionProperty(type=bpy.types.PropertyGroup)
+    wm_type.pie_creator_blender_menus = bpy.props.CollectionProperty(type=PIECREATOR_NameItem)
     wm_type.pie_creator_catalog_search = bpy.props.StringProperty(name="Search Catalog", default="")
 
     wm = bpy.context.window_manager
@@ -429,6 +441,7 @@ def unregister():
     ui.unregister()
     ops.unregister()
     bpy.utils.unregister_class(PIECREATOR_CatalogItem)
+    bpy.utils.unregister_class(PIECREATOR_NameItem)
     unregister_dynamic_menus()
 
 if __name__ == "__main__":
