@@ -2,14 +2,14 @@ schema_version = "1.0.0"
 
 id = "pie_creator"
 name = "PieCreator"
-tagline = "Build context-aware pie menus from any operator, property or macro"
+tagline = "Context-aware pie menus from any operator, property or macro"
 version = "11.0.1"
 type = "add-on"
 
 maintainer = "hinata_hugu <hinata.hugu29@gmail.com>"
 website = "https://github.com/hinatahugu29/PieCreator"
 
-tags = ["Interface", "User Interface"]
+tags = ["User Interface"]
 
 # bl_info の "blender" と揃えること。片方だけ上げると、配布形式によって
 # 対応バージョンが食い違う。
